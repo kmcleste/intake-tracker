@@ -44,7 +44,7 @@ export default function Auth() {
       <div style={{ width: "min(420px, 100%)" }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-accent-mid)", letterSpacing: "0.2em", marginBottom: 8 }}>
-            DIETARY INTAKE LOG — MEDICAL CORRELATION
+            DAILY FOOD & WELLNESS JOURNAL
           </div>
           <h1 style={{ margin: 0, fontSize: 24, color: "var(--c-text)", fontWeight: 400, fontFamily: serif }}>
             Food & Symptom Journal

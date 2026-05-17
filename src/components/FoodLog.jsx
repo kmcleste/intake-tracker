@@ -4,6 +4,8 @@ import SettingsPanel from "./SettingsPanel";
 
 const MEAL_TYPES = ["Breakfast", "Morning Snack", "Lunch", "Afternoon Snack", "Dinner", "Evening Snack", "Other"];
 const COMMON_TAGS = ["dairy-free", "gluten-free", "high-fiber", "high-fat", "high-sugar", "alcohol", "caffeine", "processed", "raw", "cooked"];
+const SYMPTOM_OPTIONS = ["fatigue", "brain fog", "confusion", "headache", "nausea", "dizziness", "anxiety", "irritability", "memory lapse", "difficulty concentrating", "tremors"];
+const WELLBEING = { 1: "very poor", 2: "poor", 3: "fair", 4: "good", 5: "very good" };
 const mono = "var(--c-font-mono)";
 const serif = "var(--c-font-serif)";
 
@@ -42,9 +44,11 @@ function EntryCard({ entry, careNotes, onDelete }) {
       onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
       <div style={{ padding: "12px 16px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }} onClick={() => setExpanded(!expanded)}>
         <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
             <span style={{ fontFamily: mono, fontSize: 11, color: "var(--c-text-subtle)", letterSpacing: "0.08em" }}>{formatTime(entry.timestamp)}</span>
             <span style={{ padding: "1px 7px", background: "var(--c-accent)", color: "var(--c-accent-lt)", fontSize: 10, fontFamily: mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{entry.meal}</span>
+            {entry.wellbeing && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-warm)", letterSpacing: "0.08em" }}>FEELING {WELLBEING[entry.wellbeing].toUpperCase()}</span>}
+            {entry.symptoms?.length > 0 && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-subtle)", letterSpacing: "0.06em" }}>{entry.symptoms.length} SYMPTOM{entry.symptoms.length > 1 ? "S" : ""}</span>}
           </div>
           <div style={{ fontFamily: serif, fontSize: 14, color: "var(--c-text)", lineHeight: 1.5 }}>{entry.foods}</div>
           {entry.tags.length > 0 && <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>{entry.tags.map(t => <Tag key={t} label={t} active />)}</div>}
@@ -57,9 +61,18 @@ function EntryCard({ entry, careNotes, onDelete }) {
 
       {expanded && (
         <div style={{ padding: "0 16px 14px", borderTop: `1px dashed var(--c-border-card)` }}>
+          {(entry.wellbeing || entry.symptoms?.length > 0) && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em", marginBottom: 6, textTransform: "uppercase" }}>Wellbeing & Symptoms</div>
+              <div style={{ background: "var(--c-bg-note)", padding: "8px 12px", borderLeft: `2px solid var(--c-border)` }}>
+                {entry.wellbeing && <div style={{ fontFamily: mono, fontSize: 11, color: "var(--c-text-warm)", letterSpacing: "0.06em", marginBottom: entry.symptoms?.length > 0 ? 6 : 0 }}>Feeling {WELLBEING[entry.wellbeing]} ({entry.wellbeing}/5)</div>}
+                {entry.symptoms?.length > 0 && <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{entry.symptoms.map(s => <Tag key={s} label={s} active />)}</div>}
+              </div>
+            </div>
+          )}
           {entry.notes && (
             <div style={{ marginTop: 10 }}>
-              <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em", marginBottom: 4, textTransform: "uppercase" }}>Clinical Notes</div>
+              <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em", marginBottom: 4, textTransform: "uppercase" }}>Notes</div>
               <div style={{ fontFamily: serif, fontSize: 13, color: "var(--c-text)", lineHeight: 1.7, fontStyle: "italic", background: "var(--c-bg-note)", padding: "8px 12px", borderLeft: `2px solid var(--c-border)` }}>{entry.notes}</div>
             </div>
           )}
@@ -84,23 +97,26 @@ function EntryCard({ entry, careNotes, onDelete }) {
 }
 
 function LogForm({ onAdd, onClose }) {
-  const [meal, setMeal]         = useState("Breakfast");
-  const [foods, setFoods]       = useState("");
-  const [notes, setNotes]       = useState("");
-  const [tags, setTags]         = useState([]);
+  const [meal, setMeal]           = useState("Breakfast");
+  const [foods, setFoods]         = useState("");
+  const [notes, setNotes]         = useState("");
+  const [tags, setTags]           = useState([]);
   const [customTag, setCustomTag] = useState("");
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState(null);
+  const [wellbeing, setWellbeing] = useState(null);
+  const [symptoms, setSymptoms]   = useState([]);
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState(null);
   const foodsRef = useRef();
 
   useEffect(() => { foodsRef.current?.focus(); }, []);
   const toggleTag = t => setTags(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t]);
+  const toggleSymptom = s => setSymptoms(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
   const addCustomTag = () => { const t = customTag.trim().toLowerCase(); if (t && !tags.includes(t)) setTags(p => [...p, t]); setCustomTag(""); };
 
   const handleSubmit = async () => {
     if (!foods.trim() || saving) return;
     setSaving(true); setError(null);
-    const err = await onAdd({ meal, foods: foods.trim(), notes: notes.trim(), tags });
+    const err = await onAdd({ meal, foods: foods.trim(), notes: notes.trim(), tags, wellbeing, symptoms });
     if (err) { setError(err); setSaving(false); } else onClose();
   };
 
@@ -114,7 +130,7 @@ function LogForm({ onAdd, onClose }) {
         <div style={{ background: "var(--c-accent)", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-accent-mid)", letterSpacing: "0.14em" }}>NEW ENTRY</div>
-            <div style={{ fontFamily: serif, fontSize: 16, color: "var(--c-accent-hd)", marginTop: 2 }}>Log Food Intake</div>
+            <div style={{ fontFamily: serif, fontSize: 16, color: "var(--c-accent-hd)", marginTop: 2 }}>What did you have?</div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--c-accent-mid)", fontSize: 20, cursor: "pointer" }}>×</button>
         </div>
@@ -122,6 +138,24 @@ function LogForm({ onAdd, onClose }) {
           {error && <div style={{ background: "var(--c-bg-error)", border: `1px solid var(--c-err-bdr)`, padding: "9px 12px", fontFamily: mono, fontSize: 11, color: "var(--c-err-text-dk)" }}>{error}</div>}
           <div><label style={lbl}>Meal / Occasion</label><select value={meal} onChange={e => setMeal(e.target.value)} style={{ ...input, cursor: "pointer" }}>{MEAL_TYPES.map(m => <option key={m}>{m}</option>)}</select></div>
           <div><label style={lbl}>Foods & Beverages</label><textarea ref={foodsRef} value={foods} onChange={e => setFoods(e.target.value)} placeholder="Describe what you ate and drank…" rows={3} style={{ ...input, lineHeight: 1.6 }} /></div>
+          <div>
+            <label style={lbl}>How are you feeling? <span style={{ opacity: 0.6, fontWeight: 400 }}>(optional)</span></label>
+            <div style={{ display: "flex", gap: 6 }}>
+              {[1, 2, 3, 4, 5].map(n => (
+                <button key={n} type="button" onClick={() => setWellbeing(p => p === n ? null : n)}
+                  style={{ flex: 1, padding: "7px 2px", textAlign: "center", fontFamily: mono, fontSize: 10, cursor: "pointer", border: `1px solid ${wellbeing === n ? "var(--c-accent-bdr)" : "var(--c-border)"}`, background: wellbeing === n ? "var(--c-accent)" : "var(--c-bg-stat)", color: wellbeing === n ? "var(--c-accent-lt)" : "var(--c-text-mid)", letterSpacing: "0.04em", lineHeight: 1.4 }}>
+                  {n}<br /><span style={{ fontSize: 8, opacity: 0.75 }}>{["", "POOR", "LOW", "FAIR", "GOOD", "GREAT"][n]}</span>
+                </button>
+              ))}
+            </div>
+            {wellbeing && <div style={{ fontFamily: serif, fontSize: 12, color: "var(--c-text-warm)", fontStyle: "italic", marginTop: 5 }}>Feeling {WELLBEING[wellbeing]}</div>}
+          </div>
+          <div>
+            <label style={lbl}>Symptoms <span style={{ opacity: 0.6, fontWeight: 400 }}>(optional — select all that apply)</span></label>
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+              {SYMPTOM_OPTIONS.map(s => <Tag key={s} label={s} active={symptoms.includes(s)} onClick={() => toggleSymptom(s)} />)}
+            </div>
+          </div>
           <div>
             <label style={lbl}>Properties / Flags</label>
             <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>{COMMON_TAGS.map(t => <Tag key={t} label={t} active={tags.includes(t)} onClick={() => toggleTag(t)} />)}</div>
@@ -131,7 +165,7 @@ function LogForm({ onAdd, onClose }) {
             </div>
             {tags.length > 0 && <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 8 }}>{tags.map(t => <Tag key={t} label={t} active onRemove={() => setTags(p => p.filter(x => x !== t))} />)}</div>}
           </div>
-          <div><label style={lbl}>Clinical / Observational Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any symptoms, reactions, timing of effects…" rows={4} style={{ ...input, lineHeight: 1.7, fontStyle: "italic" }} /></div>
+          <div><label style={lbl}>Additional Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Anything else you noticed — timing, how you felt, reactions…" rows={4} style={{ ...input, lineHeight: 1.7, fontStyle: "italic" }} /></div>
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", paddingTop: 4 }}>
             <button onClick={onClose} style={{ background: "none", border: `1px solid var(--c-border)`, padding: "8px 18px", fontFamily: mono, fontSize: 11, color: "var(--c-text-subtle)", cursor: "pointer", letterSpacing: "0.08em" }}>CANCEL</button>
             <button onClick={handleSubmit} disabled={!ok} style={{ background: ok ? "var(--c-accent)" : "var(--c-border)", border: "none", padding: "8px 22px", fontFamily: mono, fontSize: 11, color: ok ? "var(--c-accent-lt)" : "var(--c-text-subtle)", cursor: ok ? "pointer" : "not-allowed", letterSpacing: "0.1em" }}>
@@ -147,8 +181,12 @@ function LogForm({ onAdd, onClose }) {
 function ExportModal({ entries, onClose }) {
   const text = Object.entries(groupByDate(entries)).map(([date, group]) =>
     `=== ${date} ===\n` + group.map(e =>
-      `[${formatTime(e.timestamp)}] ${e.meal.toUpperCase()}\nFoods: ${e.foods}\n` +
-      (e.tags.length ? `Tags: ${e.tags.join(", ")}\n` : "") + (e.notes ? `Notes: ${e.notes}\n` : "")
+      `[${formatTime(e.timestamp)}] ${e.meal.toUpperCase()}\n` +
+      `Foods: ${e.foods}\n` +
+      (e.wellbeing ? `Wellbeing: ${WELLBEING[e.wellbeing]} (${e.wellbeing}/5)\n` : "") +
+      (e.symptoms?.length ? `Symptoms: ${e.symptoms.join(", ")}\n` : "") +
+      (e.tags.length ? `Tags: ${e.tags.join(", ")}\n` : "") +
+      (e.notes ? `Notes: ${e.notes}\n` : "")
     ).join("\n") + "\n"
   ).join("\n");
 
@@ -202,7 +240,7 @@ function CareTeamPanel({ session, onClose, onLinksChanged }) {
         </div>
         <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 18 }}>
           <p style={{ margin: 0, fontFamily: serif, fontSize: 13, color: "var(--c-text-muted)", lineHeight: 1.6, fontStyle: "italic" }}>
-            Invite a caregiver or family member by email. They can add private notes to your entries — you'll only see notes they choose to share with you.
+            Invite a family member or helper by email. They can add private notes to your entries — you'll only see notes they choose to share with you.
           </p>
           {links.length > 0 && (
             <div>
@@ -265,8 +303,8 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
     load();
   }, [session.user.id]);
 
-  const handleAdd = async ({ meal, foods, notes, tags }) => {
-    const { data, error } = await supabase.from("entries").insert({ user_id: session.user.id, timestamp: new Date().toISOString(), meal, foods, notes, tags, severity: null }).select().single();
+  const handleAdd = async ({ meal, foods, notes, tags, wellbeing, symptoms }) => {
+    const { data, error } = await supabase.from("entries").insert({ user_id: session.user.id, timestamp: new Date().toISOString(), meal, foods, notes, tags, wellbeing: wellbeing ?? null, symptoms: symptoms ?? [] }).select().single();
     if (error) return error.message;
     setEntries(prev => [data, ...prev]); return null;
   };
@@ -301,7 +339,7 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
         ))}
 
         <div style={{ padding: "32px 0 24px", borderBottom: `2px solid var(--c-accent)` }}>
-          <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-accent-mid)", letterSpacing: "0.2em", marginBottom: 6 }}>DIETARY INTAKE LOG — MEDICAL CORRELATION</div>
+          <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-accent-mid)", letterSpacing: "0.2em", marginBottom: 6 }}>DAILY FOOD & WELLNESS JOURNAL</div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 10 }}>
             <div>
               <h1 style={{ margin: 0, fontSize: 28, color: "var(--c-text)", fontWeight: 400, lineHeight: 1.2 }}>Food & Symptom Journal</h1>

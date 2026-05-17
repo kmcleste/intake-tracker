@@ -4,6 +4,7 @@ import SettingsPanel from "./SettingsPanel";
 
 const mono = "var(--c-font-mono)";
 const serif = "var(--c-font-serif)";
+const WELLBEING = { 1: "very poor", 2: "poor", 3: "fair", 4: "good", 5: "very good" };
 
 function formatTime(iso) { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
 function formatDate(iso) {
@@ -56,9 +57,11 @@ function EntryCard({ entry, notes, onNoteAdded, onNoteToggled, onNoteDeleted }) 
     <div style={{ background: "var(--c-bg-card)", border: `1px solid var(--c-border-card)`, borderLeft: "3px solid var(--c-accent-mid)", marginBottom: 10 }}>
       <div style={{ padding: "12px 16px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }} onClick={() => setExpanded(!expanded)}>
         <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
             <span style={{ fontFamily: mono, fontSize: 11, color: "var(--c-text-subtle)", letterSpacing: "0.08em" }}>{formatTime(entry.timestamp)}</span>
             <span style={{ padding: "1px 7px", background: "var(--c-accent)", color: "var(--c-accent-lt)", fontSize: 10, fontFamily: mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{entry.meal}</span>
+            {entry.wellbeing && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-warm)", letterSpacing: "0.08em" }}>FEELING {WELLBEING[entry.wellbeing].toUpperCase()}</span>}
+            {entry.symptoms?.length > 0 && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-subtle)", letterSpacing: "0.06em" }}>{entry.symptoms.length} SYMPTOM{entry.symptoms.length > 1 ? "S" : ""}</span>}
             {notes.length > 0 && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-warm)", letterSpacing: "0.08em" }}>{notes.length} NOTE{notes.length > 1 ? "S" : ""}</span>}
           </div>
           <div style={{ fontFamily: serif, fontSize: 14, color: "var(--c-text)", lineHeight: 1.5 }}>{entry.foods}</div>
@@ -69,21 +72,30 @@ function EntryCard({ entry, notes, onNoteAdded, onNoteToggled, onNoteDeleted }) 
 
       {expanded && (
         <div style={{ padding: "0 16px 14px", borderTop: `1px dashed var(--c-border-card)` }}>
+          {(entry.wellbeing || entry.symptoms?.length > 0) && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em", marginBottom: 6, textTransform: "uppercase" }}>Wellbeing & Symptoms</div>
+              <div style={{ background: "var(--c-bg-note)", padding: "8px 12px", borderLeft: `2px solid var(--c-border)` }}>
+                {entry.wellbeing && <div style={{ fontFamily: mono, fontSize: 11, color: "var(--c-text-warm)", letterSpacing: "0.06em", marginBottom: entry.symptoms?.length > 0 ? 6 : 0 }}>Feeling {WELLBEING[entry.wellbeing]} ({entry.wellbeing}/5)</div>}
+                {entry.symptoms?.length > 0 && <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{entry.symptoms.map(s => <span key={s} style={{ display: "inline-flex", padding: "2px 8px", background: "var(--c-accent)", color: "var(--c-accent-lt)", border: "1px solid var(--c-accent-bdr)", fontSize: 11, fontFamily: mono, letterSpacing: "0.04em" }}>{s}</span>)}</div>}
+              </div>
+            </div>
+          )}
           {entry.notes && (
             <div style={{ marginTop: 10 }}>
-              <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em", marginBottom: 4, textTransform: "uppercase" }}>Patient's Notes</div>
+              <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em", marginBottom: 4, textTransform: "uppercase" }}>Notes</div>
               <div style={{ fontFamily: serif, fontSize: 13, color: "var(--c-text)", lineHeight: 1.7, fontStyle: "italic", background: "var(--c-bg-note)", padding: "8px 12px", borderLeft: `2px solid var(--c-border)` }}>{entry.notes}</div>
             </div>
           )}
           <div style={{ marginTop: 14 }}>
             <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-warm)", letterSpacing: "0.1em", marginBottom: 8, textTransform: "uppercase" }}>
-              Your Reviewer Notes
-              <span style={{ marginLeft: 8, color: "var(--c-text-subtle)", fontWeight: 400 }}>— toggle SHARED to make visible to patient</span>
+              Your Observations
+              <span style={{ marginLeft: 8, color: "var(--c-text-subtle)", fontWeight: 400 }}>— toggle SHARED to make visible</span>
             </div>
             {notes.length === 0 && <div style={{ fontFamily: serif, fontSize: 12, color: "var(--c-text-subtle)", fontStyle: "italic", marginBottom: 8 }}>No notes yet.</div>}
             {notes.map(n => <ReviewerNoteRow key={n.id} note={n} onToggle={onNoteToggled} onDelete={onNoteDeleted} />)}
             <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-              <textarea value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a clinical observation…" rows={2}
+              <textarea value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add an observation…" rows={2}
                 style={{ flex: 1, background: "var(--c-bg-card)", border: `1px solid var(--c-border)`, padding: "7px 9px", fontFamily: serif, fontSize: 13, color: "var(--c-text)", outline: "none", resize: "vertical", fontStyle: "italic" }} />
               <button onClick={handleAddNote} disabled={!noteText.trim() || adding}
                 style={{ background: noteText.trim() && !adding ? "var(--c-accent)" : "var(--c-border)", border: "none", padding: "0 14px", fontFamily: mono, fontSize: 10, color: noteText.trim() && !adding ? "var(--c-accent-lt)" : "var(--c-text-subtle)", cursor: noteText.trim() && !adding ? "pointer" : "not-allowed", letterSpacing: "0.08em", alignSelf: "flex-end", height: 34 }}>
@@ -139,7 +151,7 @@ export default function CaregiverDashboard({ session, link, settings, onUpdateSe
     <div style={{ minHeight: "100vh", background: "var(--c-bg)", fontFamily: serif }}>
       <div style={{ maxWidth: 700, margin: "0 auto", padding: "0 16px 60px" }}>
         <div style={{ padding: "32px 0 24px", borderBottom: `2px solid var(--c-accent)` }}>
-          <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-accent-mid)", letterSpacing: "0.2em", marginBottom: 6 }}>CAREGIVER VIEW</div>
+          <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-accent-mid)", letterSpacing: "0.2em", marginBottom: 6 }}>CARE TEAM VIEW</div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 10 }}>
             <div>
               <h1 style={{ margin: 0, fontSize: 24, color: "var(--c-text)", fontWeight: 400 }}>Reviewing Journal</h1>
