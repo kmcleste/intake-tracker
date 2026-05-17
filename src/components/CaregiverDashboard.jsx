@@ -145,6 +145,7 @@ function EntryCard({ entry, notes, onNoteAdded, onNoteToggled, onNoteDeleted }) 
             {entry.wellbeing && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-warm)", letterSpacing: "0.08em" }}>FEELING {WELLBEING[entry.wellbeing].toUpperCase()}</span>}
             {entry.symptoms?.length > 0 && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-subtle)", letterSpacing: "0.06em" }}>{entry.symptoms.length} SYMPTOM{entry.symptoms.length > 1 ? "S" : ""}</span>}
             {notes.length > 0 && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-warm)", letterSpacing: "0.08em" }}>{notes.length} NOTE{notes.length > 1 ? "S" : ""}</span>}
+            {entry.photo_url && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-subtle)", letterSpacing: "0.08em" }}>PHOTO</span>}
             {entry.logged_by && entry.logged_by !== entry.user_id && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-warm)", letterSpacing: "0.08em", border: `1px solid var(--c-text-warm)`, padding: "1px 5px" }}>LOGGED BY YOU</span>}
           </div>
           <div style={{ fontFamily: serif, fontSize: 14, color: "var(--c-text)", lineHeight: 1.5 }}>{entry.foods}</div>
@@ -155,6 +156,11 @@ function EntryCard({ entry, notes, onNoteAdded, onNoteToggled, onNoteDeleted }) 
 
       {expanded && (
         <div style={{ padding: "0 16px 14px", borderTop: `1px dashed var(--c-border-card)` }}>
+          {entry.photo_url && (
+            <div style={{ marginTop: 10 }}>
+              <img src={entry.photo_url} alt="meal" style={{ maxWidth: "100%", maxHeight: 260, display: "block", border: `1px solid var(--c-border-card)` }} />
+            </div>
+          )}
           {(entry.wellbeing || entry.symptoms?.length > 0) && (
             <div style={{ marginTop: 10 }}>
               <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em", marginBottom: 6, textTransform: "uppercase" }}>Wellbeing & Symptoms</div>
