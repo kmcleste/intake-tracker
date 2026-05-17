@@ -85,6 +85,7 @@ if (url && key) {
       signOut: async () => { writeSession(null); notify("SIGNED_OUT", null); return { error: null }; },
     },
     from: (table) => new Q(table),
+    rpc: async () => ({ data: null, error: null }),
   };
 }
 
