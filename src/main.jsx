@@ -6,6 +6,6 @@ import App from "./App.jsx";
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <App />
-    <Analytics />
+    {import.meta.env.VITE_ANALYTICS !== "false" && <Analytics />}
   </StrictMode>
 );

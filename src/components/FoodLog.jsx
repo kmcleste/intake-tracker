@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import SettingsPanel from "./SettingsPanel";
 import { useReminder } from "../lib/reminder";
 import WeekTimeline from "./WeekTimeline";
+import PrivacyModal from "./PrivacyModal";
 
 const MEAL_TYPES = ["Breakfast", "Morning Snack", "Lunch", "Afternoon Snack", "Dinner", "Evening Snack", "Other"];
 const COMMON_TAGS = ["dairy-free", "gluten-free", "high-fiber", "high-fat", "high-sugar", "alcohol", "caffeine", "processed", "raw", "cooked"];
@@ -346,6 +347,7 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
   const [showExport, setShowExport]   = useState(false);
   const [showCareTeam, setShowCareTeam] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showPrivacy, setShowPrivacy]   = useState(false);
   const [filterTag, setFilterTag]     = useState(null);
   const [search, setSearch]           = useState("");
 
@@ -426,6 +428,7 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
               )}
               <button onClick={() => setShowSettings(true)} style={{ background: "none", border: `1px solid var(--c-border)`, color: "var(--c-text-subtle)", padding: "8px 14px", fontFamily: mono, fontSize: 10, cursor: "pointer", letterSpacing: "0.1em" }}>SETTINGS</button>
               <button onClick={() => setShowCareTeam(true)} style={{ background: "none", border: `1px solid var(--c-border)`, color: "var(--c-text-subtle)", padding: "8px 14px", fontFamily: mono, fontSize: 10, cursor: "pointer", letterSpacing: "0.1em" }}>CARE TEAM</button>
+              <button onClick={() => setShowPrivacy(true)} style={{ background: "none", border: `1px solid var(--c-border)`, color: "var(--c-text-subtle)", padding: "8px 14px", fontFamily: mono, fontSize: 10, cursor: "pointer", letterSpacing: "0.1em" }}>PRIVACY</button>
               <button onClick={() => supabase.auth.signOut()} style={{ background: "none", border: `1px solid var(--c-border)`, color: "var(--c-text-subtle)", padding: "8px 14px", fontFamily: mono, fontSize: 10, cursor: "pointer", letterSpacing: "0.1em" }}>SIGN OUT</button>
               <button onClick={() => setShowExport(true)} style={{ background: "none", border: `1px solid var(--c-accent-mid)`, color: "var(--c-accent)", padding: "8px 14px", fontFamily: mono, fontSize: 10, cursor: "pointer", letterSpacing: "0.1em" }}>EXPORT</button>
               <button onClick={() => setShowForm(true)} style={{ background: "var(--c-accent)", border: "none", color: "var(--c-accent-lt)", padding: "8px 18px", fontFamily: mono, fontSize: 10, cursor: "pointer", letterSpacing: "0.1em" }}>+ LOG ENTRY</button>
@@ -487,6 +490,7 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
       {showExport   && <ExportModal entries={entries} onClose={() => setShowExport(false)} />}
       {showCareTeam && <CareTeamPanel session={session} onClose={() => setShowCareTeam(false)} onLinksChanged={onLinksChanged} />}
       {showSettings && <SettingsPanel settings={settings} update={onUpdateSetting} onClose={() => setShowSettings(false)} notifEnabled={notifEnabled} onToggleNotif={toggleNotif} />}
+      {showPrivacy  && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
     </div>
   );
 }
