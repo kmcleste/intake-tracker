@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import SettingsPanel from "./SettingsPanel";
+import { useReminder } from "../lib/reminder";
 
 const MEAL_TYPES = ["Breakfast", "Morning Snack", "Lunch", "Afternoon Snack", "Dinner", "Evening Snack", "Other"];
 const COMMON_TAGS = ["dairy-free", "gluten-free", "high-fiber", "high-fat", "high-sugar", "alcohol", "caffeine", "processed", "raw", "cooked"];
@@ -283,6 +284,7 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
   const [careNoteMap, setCareNoteMap] = useState({});
   const [loading, setLoading]         = useState(true);
   const [showForm, setShowForm]       = useState(false);
+  const { showBanner, dismissBanner, notifEnabled, toggleNotif } = useReminder(entries);
   const [showExport, setShowExport]   = useState(false);
   const [showCareTeam, setShowCareTeam] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -358,6 +360,18 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
           </div>
         </div>
 
+        {showBanner && (
+          <div style={{ background: "var(--c-bg-success)", border: `1px solid var(--c-accent-bdr)`, borderTop: "none", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <span style={{ fontFamily: serif, fontSize: 13, color: "var(--c-text)", fontStyle: "italic" }}>
+              Nothing logged today yet — how's it going?
+            </span>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <button onClick={() => setShowForm(true)} style={{ background: "var(--c-accent)", border: "none", padding: "5px 14px", fontFamily: mono, fontSize: 10, color: "var(--c-accent-lt)", cursor: "pointer", letterSpacing: "0.1em" }}>LOG NOW</button>
+              <button onClick={dismissBanner} style={{ background: "none", border: "none", color: "var(--c-text-subtle)", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: "flex", borderBottom: `1px solid var(--c-border)` }}>
           {[{ label: "Total Entries", value: entries.length }, { label: "Today", value: entries.filter(e => formatDate(e.timestamp) === "Today").length }, { label: "Tagged", value: entries.filter(e => e.tags.length > 0).length }, { label: "With Notes", value: entries.filter(e => e.notes).length }].map((s, i) => (
             <div key={i} style={{ flex: 1, padding: "10px 14px", borderRight: i < 3 ? `1px solid var(--c-border)` : "none", background: "var(--c-bg-stat)" }}>
@@ -393,7 +407,7 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
       {showForm     && <LogForm onAdd={handleAdd} onClose={() => setShowForm(false)} />}
       {showExport   && <ExportModal entries={entries} onClose={() => setShowExport(false)} />}
       {showCareTeam && <CareTeamPanel session={session} onClose={() => setShowCareTeam(false)} onLinksChanged={onLinksChanged} />}
-      {showSettings && <SettingsPanel settings={settings} update={onUpdateSetting} onClose={() => setShowSettings(false)} />}
+      {showSettings && <SettingsPanel settings={settings} update={onUpdateSetting} onClose={() => setShowSettings(false)} notifEnabled={notifEnabled} onToggleNotif={toggleNotif} />}
     </div>
   );
 }
