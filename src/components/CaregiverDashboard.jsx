@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import { log } from "../lib/audit";
 import SettingsPanel from "./SettingsPanel";
 
 const mono = "var(--c-font-mono)";
@@ -216,21 +217,27 @@ export default function CaregiverDashboard({ session, link, settings, onUpdateSe
       const map = {};
       (notes || []).forEach(n => { if (!map[n.entry_id]) map[n.entry_id] = []; map[n.entry_id].push(n); });
       setNoteMap(map); setLoading(false);
+      log(session.user.id, link.patient_id, "entries.view", "entry", null);
     };
     load();
   }, [link, session.user.id]);
 
   const handleNoteAdded = async (entry, text) => {
     const { data } = await supabase.from("caregiver_notes").insert({ entry_id: entry.id, caregiver_id: session.user.id, patient_id: link.patient_id, note: text, visible_to_patient: false }).select().single();
-    if (data) setNoteMap(prev => ({ ...prev, [entry.id]: [...(prev[entry.id] || []), data] }));
+    if (data) {
+      log(session.user.id, link.patient_id, "note.create", "note", data?.id ?? null);
+      setNoteMap(prev => ({ ...prev, [entry.id]: [...(prev[entry.id] || []), data] }));
+    }
   };
   const handleNoteToggled = async (note) => {
     const updated = { ...note, visible_to_patient: !note.visible_to_patient };
     await supabase.from("caregiver_notes").update({ visible_to_patient: updated.visible_to_patient }).eq("id", note.id);
+    log(session.user.id, link.patient_id, note.visible_to_patient ? "note.hide" : "note.share", "note", note.id);
     setNoteMap(prev => ({ ...prev, [note.entry_id]: prev[note.entry_id].map(n => n.id === note.id ? updated : n) }));
   };
   const handleNoteDeleted = async (noteId) => {
     await supabase.from("caregiver_notes").delete().eq("id", noteId);
+    log(session.user.id, link.patient_id, "note.delete", "note", noteId);
     setNoteMap(prev => { const n = { ...prev }; for (const k in n) n[k] = n[k].filter(x => x.id !== noteId); return n; });
   };
 

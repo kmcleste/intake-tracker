@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
+import { log } from "../lib/audit";
 import SettingsPanel from "./SettingsPanel";
 import { useReminder } from "../lib/reminder";
 import WeekTimeline from "./WeekTimeline";
@@ -381,11 +382,15 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
       }
     }
 
+    log(session.user.id, session.user.id, "entry.create", "entry", data.id);
     setEntries(prev => [{ ...data, photo_url: photoUrl }, ...prev]); return null;
   };
   const handleDelete = async (id) => {
     const { error } = await supabase.from("entries").delete().eq("id", id);
-    if (!error) setEntries(prev => prev.filter(e => e.id !== id));
+    if (!error) {
+      log(session.user.id, session.user.id, "entry.delete", "entry", id);
+      setEntries(prev => prev.filter(e => e.id !== id));
+    }
   };
 
   const allTags = [...new Set(entries.flatMap(e => e.tags))];
