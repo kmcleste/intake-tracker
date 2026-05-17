@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./lib/supabase";
+import { useInactivityTimeout } from "./lib/inactivity";
 import { useSettings, ZOOM } from "./lib/settings";
 import { THEMES } from "./lib/theme";
 import Auth from "./components/Auth";
@@ -40,6 +41,9 @@ export default function App() {
   useEffect(() => {
     document.body.style.zoom = ZOOM[settings.fontSize] ?? 1;
   }, [settings.fontSize]);
+
+  const rememberMe = localStorage.getItem("intake_remember") !== "false";
+  const { warnVisible } = useInactivityTimeout(!rememberMe && !!session, 30 * 60 * 1000, useCallback(async () => { await supabase.auth.signOut(); }, []));
 
   const loadCaregiverData = useCallback(async (user) => {
     const [{ data: active }, { data: pending }] = await Promise.all([
@@ -89,27 +93,41 @@ export default function App() {
 
   if (caregiverView) {
     return (
-      <CaregiverDashboard
-        session={session}
-        link={caregiverView}
-        settings={settings}
-        onUpdateSetting={update}
-        onBack={() => setCaregiverView(null)}
-      />
+      <>
+        <CaregiverDashboard
+          session={session}
+          link={caregiverView}
+          settings={settings}
+          onUpdateSetting={update}
+          onBack={() => setCaregiverView(null)}
+        />
+        {warnVisible && (
+          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--c-accent)", color: "var(--c-accent-lt)", fontFamily: "var(--c-font-mono)", fontSize: 11, padding: "10px 16px", textAlign: "center", letterSpacing: "0.08em", zIndex: 200 }}>
+            You'll be signed out in 2 minutes due to inactivity.
+          </div>
+        )}
+      </>
     );
   }
 
   return (
-    <FoodLog
-      session={session}
-      caregiverFor={caregiverFor}
-      pendingInvites={pendingInvites}
-      settings={settings}
-      onUpdateSetting={update}
-      onAcceptInvite={handleAcceptInvite}
-      onDeclineInvite={handleDeclineInvite}
-      onSwitchToCaregiver={setCaregiverView}
-      onLinksChanged={() => loadCaregiverData(session.user)}
-    />
+    <>
+      <FoodLog
+        session={session}
+        caregiverFor={caregiverFor}
+        pendingInvites={pendingInvites}
+        settings={settings}
+        onUpdateSetting={update}
+        onAcceptInvite={handleAcceptInvite}
+        onDeclineInvite={handleDeclineInvite}
+        onSwitchToCaregiver={setCaregiverView}
+        onLinksChanged={() => loadCaregiverData(session.user)}
+      />
+      {warnVisible && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--c-accent)", color: "var(--c-accent-lt)", fontFamily: "var(--c-font-mono)", fontSize: 11, padding: "10px 16px", textAlign: "center", letterSpacing: "0.08em", zIndex: 200 }}>
+          You'll be signed out in 2 minutes due to inactivity.
+        </div>
+      )}
+    </>
   );
 }
