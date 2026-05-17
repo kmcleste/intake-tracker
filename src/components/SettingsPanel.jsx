@@ -31,7 +31,7 @@ function Chip({ label, active, onClick, preview }) {
   );
 }
 
-export default function SettingsPanel({ settings, update, onClose }) {
+export default function SettingsPanel({ settings, update, onClose, notifEnabled, onToggleNotif }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "var(--c-overlay)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(2px)" }}>
       <div style={{ background: "var(--c-bg-panel)", border: `1px solid var(--c-border)`, width: "min(420px, 95vw)", boxShadow: `4px 4px 0 var(--c-shadow)` }}>
@@ -59,6 +59,10 @@ export default function SettingsPanel({ settings, update, onClose }) {
           <Row label="Font">
             <Chip label="Serif" active={settings.font === "serif"} onClick={() => update("font", "serif")} preview="'Georgia', serif" />
             <Chip label="Sans-serif" active={settings.font === "sans"} onClick={() => update("font", "sans")} preview="system-ui, sans-serif" />
+          </Row>
+
+          <Row label="Daily reminder">
+            <Chip label={notifEnabled ? "ON" : "OFF"} active={notifEnabled} onClick={onToggleNotif} />
           </Row>
 
           <p style={{ margin: 0, fontFamily: serif, fontSize: 12, color: "var(--c-text-subtle)", fontStyle: "italic", lineHeight: 1.6 }}>
