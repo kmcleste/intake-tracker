@@ -213,6 +213,11 @@ function CareTeamPanel({ session, onClose, onLinksChanged }) {
       caregiver_email: addr,
       status: "pending",
     });
+    // Send caregiver a magic-link email so they land on the app already signed in
+    await supabase.auth.signInWithOtp({
+      email: addr,
+      options: { emailRedirectTo: window.location.origin, shouldCreateUser: true },
+    });
     setEmail(""); await loadLinks(); onLinksChanged();
     setSaving(false);
   };
