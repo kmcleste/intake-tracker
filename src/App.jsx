@@ -51,10 +51,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) loadCaregiverData(session.user);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        if (session) loadCaregiverData(session.user);
+      })
+      .catch(() => setSession(null));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_ev, session) => {
       setSession(session);
       if (session) loadCaregiverData(session.user);
