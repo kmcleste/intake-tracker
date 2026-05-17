@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { supabase } from "../lib/supabase";
+
 const mono = "var(--c-font-mono)";
 const serif = "var(--c-font-serif)";
 
@@ -32,6 +35,10 @@ function Chip({ label, active, onClick, preview }) {
 }
 
 export default function SettingsPanel({ settings, update, onClose, notifEnabled, onToggleNotif }) {
+  const [deleteStep, setDeleteStep] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+
   return (
     <div style={{ position: "fixed", inset: 0, background: "var(--c-overlay)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(2px)" }}>
       <div style={{ background: "var(--c-bg-panel)", border: `1px solid var(--c-border)`, width: "min(420px, 95vw)", boxShadow: `4px 4px 0 var(--c-shadow)` }}>
@@ -68,6 +75,37 @@ export default function SettingsPanel({ settings, update, onClose, notifEnabled,
           <p style={{ margin: 0, fontFamily: serif, fontSize: 12, color: "var(--c-text-subtle)", fontStyle: "italic", lineHeight: 1.6 }}>
             Settings are saved automatically and persist across sessions.
           </p>
+
+          <div style={{ borderTop: `1px solid var(--c-border)`, paddingTop: 16, marginTop: 4 }}>
+            <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>Data & Privacy</div>
+            {!deleteStep ? (
+              <button onClick={() => setDeleteStep(true)}
+                style={{ background: "none", border: `1px solid var(--c-err-bdr)`, color: "var(--c-err-text)", fontFamily: mono, fontSize: 10, padding: "7px 14px", cursor: "pointer", letterSpacing: "0.08em", width: "100%" }}>
+                Delete my account and all data
+              </button>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <p style={{ margin: 0, fontFamily: serif, fontSize: 13, color: "var(--c-err-text-dk)", lineHeight: 1.6 }}>
+                  This will permanently delete all your journal entries, photos, and care team connections. This cannot be undone.
+                </p>
+                {deleteError && <div style={{ fontFamily: mono, fontSize: 11, color: "var(--c-err-text-dk)", background: "var(--c-bg-error)", border: `1px solid var(--c-err-bdr)`, padding: "7px 10px" }}>{deleteError}</div>}
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => { setDeleteStep(false); setDeleteError(null); }} disabled={deleting}
+                    style={{ flex: 1, background: "none", border: `1px solid var(--c-border)`, color: "var(--c-text-subtle)", fontFamily: mono, fontSize: 10, padding: "7px 0", cursor: deleting ? "not-allowed" : "pointer", letterSpacing: "0.08em" }}>
+                    Cancel
+                  </button>
+                  <button onClick={async () => {
+                    setDeleting(true); setDeleteError(null);
+                    const { error } = await supabase.rpc("delete_user_account");
+                    if (error) { setDeleteError(error.message); setDeleting(false); }
+                  }} disabled={deleting}
+                    style={{ flex: 1, background: deleting ? "var(--c-border)" : "var(--c-err-bdr)", border: "none", color: deleting ? "var(--c-text-subtle)" : "#fff", fontFamily: mono, fontSize: 10, padding: "7px 0", cursor: deleting ? "not-allowed" : "pointer", letterSpacing: "0.08em" }}>
+                    {deleting ? "Deleting…" : "Yes, delete everything"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
