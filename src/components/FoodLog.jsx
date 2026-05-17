@@ -353,6 +353,18 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
   const [showPrivacy, setShowPrivacy]   = useState(false);
   const [filterTag, setFilterTag]     = useState(null);
   const [search, setSearch]           = useState("");
+  const [installPrompt, setInstallPrompt] = useState(null);
+  useEffect(() => {
+    const handler = e => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -474,6 +486,16 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <button onClick={() => setShowForm(true)} style={{ background: "var(--c-accent)", border: "none", padding: "5px 14px", fontFamily: mono, fontSize: 10, color: "var(--c-accent-lt)", cursor: "pointer", letterSpacing: "0.1em" }}>LOG NOW</button>
               <button onClick={dismissBanner} style={{ background: "none", border: "none", color: "var(--c-text-subtle)", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+            </div>
+          </div>
+        )}
+
+        {installPrompt && (
+          <div style={{ background: "var(--c-bg-stat)", borderBottom: `1px solid var(--c-border)`, padding: "8px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <span style={{ fontFamily: serif, fontSize: 13, color: "var(--c-text-muted)", fontStyle: "italic" }}>Install this app on your home screen for easier access.</span>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              <button onClick={handleInstall} style={{ background: "var(--c-accent)", border: "none", padding: "5px 14px", fontFamily: mono, fontSize: 10, color: "var(--c-accent-lt)", cursor: "pointer", letterSpacing: "0.1em" }}>INSTALL</button>
+              <button onClick={() => setInstallPrompt(null)} style={{ background: "none", border: "none", color: "var(--c-text-subtle)", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
             </div>
           </div>
         )}
