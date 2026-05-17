@@ -51,6 +51,7 @@ function EntryCard({ entry, careNotes, onDelete }) {
             <span style={{ padding: "1px 7px", background: "var(--c-accent)", color: "var(--c-accent-lt)", fontSize: 10, fontFamily: mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{entry.meal}</span>
             {entry.wellbeing && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-warm)", letterSpacing: "0.08em" }}>FEELING {WELLBEING[entry.wellbeing].toUpperCase()}</span>}
             {entry.symptoms?.length > 0 && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-subtle)", letterSpacing: "0.06em" }}>{entry.symptoms.length} SYMPTOM{entry.symptoms.length > 1 ? "S" : ""}</span>}
+            {entry.photo_url && <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-subtle)", letterSpacing: "0.06em" }}>PHOTO</span>}
           </div>
           <div style={{ fontFamily: serif, fontSize: 14, color: "var(--c-text)", lineHeight: 1.5 }}>{entry.foods}</div>
           {entry.tags.length > 0 && <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>{entry.tags.map(t => <Tag key={t} label={t} active />)}</div>}
@@ -63,6 +64,11 @@ function EntryCard({ entry, careNotes, onDelete }) {
 
       {expanded && (
         <div style={{ padding: "0 16px 14px", borderTop: `1px dashed var(--c-border-card)` }}>
+          {entry.photo_url && (
+            <div style={{ marginTop: 10 }}>
+              <img src={entry.photo_url} alt="meal" style={{ maxWidth: "100%", maxHeight: 220, display: "block", border: `1px solid var(--c-border-card)` }} />
+            </div>
+          )}
           {(entry.wellbeing || entry.symptoms?.length > 0) && (
             <div style={{ marginTop: 10 }}>
               <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em", marginBottom: 6, textTransform: "uppercase" }}>Wellbeing & Symptoms</div>
@@ -106,9 +112,12 @@ function LogForm({ onAdd, onClose }) {
   const [customTag, setCustomTag] = useState("");
   const [wellbeing, setWellbeing] = useState(null);
   const [symptoms, setSymptoms]   = useState([]);
+  const [photo, setPhoto]         = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState(null);
   const foodsRef = useRef();
+  const photoInputRef = useRef();
 
   useEffect(() => { foodsRef.current?.focus(); }, []);
   const toggleTag = t => setTags(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t]);
@@ -118,7 +127,7 @@ function LogForm({ onAdd, onClose }) {
   const handleSubmit = async () => {
     if (!foods.trim() || saving) return;
     setSaving(true); setError(null);
-    const err = await onAdd({ meal, foods: foods.trim(), notes: notes.trim(), tags, wellbeing, symptoms });
+    const err = await onAdd({ meal, foods: foods.trim(), notes: notes.trim(), tags, wellbeing, symptoms, photo });
     if (err) { setError(err); setSaving(false); } else onClose();
   };
 
@@ -140,6 +149,29 @@ function LogForm({ onAdd, onClose }) {
           {error && <div style={{ background: "var(--c-bg-error)", border: `1px solid var(--c-err-bdr)`, padding: "9px 12px", fontFamily: mono, fontSize: 11, color: "var(--c-err-text-dk)" }}>{error}</div>}
           <div><label style={lbl}>Meal / Occasion</label><select value={meal} onChange={e => setMeal(e.target.value)} style={{ ...input, cursor: "pointer" }}>{MEAL_TYPES.map(m => <option key={m}>{m}</option>)}</select></div>
           <div><label style={lbl}>Foods & Beverages</label><textarea ref={foodsRef} value={foods} onChange={e => setFoods(e.target.value)} placeholder="Describe what you ate and drank…" rows={3} style={{ ...input, lineHeight: 1.6 }} /></div>
+          <div>
+            <label style={lbl}>Photo <span style={{ opacity: 0.6, fontWeight: 400 }}>(optional)</span></label>
+            <input ref={photoInputRef} type="file" accept="image/*" capture="environment"
+              onChange={e => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                setPhoto(f);
+                setPhotoPreview(URL.createObjectURL(f));
+              }}
+              style={{ display: "none" }} />
+            {photoPreview ? (
+              <div style={{ position: "relative", display: "inline-block" }}>
+                <img src={photoPreview} alt="meal" style={{ maxWidth: "100%", maxHeight: 180, display: "block", border: `1px solid var(--c-border)` }} />
+                <button type="button" onClick={() => { setPhoto(null); setPhotoPreview(null); }}
+                  style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.5)", border: "none", color: "#fff", width: 22, height: 22, cursor: "pointer", fontSize: 14, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => photoInputRef.current?.click()}
+                style={{ background: "var(--c-bg-stat)", border: `1px dashed var(--c-border)`, padding: "10px 16px", fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", cursor: "pointer", letterSpacing: "0.08em", width: "100%" }}>
+                + ADD PHOTO
+              </button>
+            )}
+          </div>
           <div>
             <label style={lbl}>How are you feeling? <span style={{ opacity: 0.6, fontWeight: 400 }}>(optional)</span></label>
             <div style={{ display: "flex", gap: 6 }}>
@@ -331,10 +363,25 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
     load();
   }, [session.user.id]);
 
-  const handleAdd = async ({ meal, foods, notes, tags, wellbeing, symptoms }) => {
-    const { data, error } = await supabase.from("entries").insert({ user_id: session.user.id, timestamp: new Date().toISOString(), meal, foods, notes, tags, wellbeing: wellbeing ?? null, symptoms: symptoms ?? [] }).select().single();
+  const handleAdd = async ({ meal, foods, notes, tags, wellbeing, symptoms, photo }) => {
+    const { data, error } = await supabase.from("entries")
+      .insert({ user_id: session.user.id, timestamp: new Date().toISOString(), meal, foods, notes, tags, wellbeing: wellbeing ?? null, symptoms: symptoms ?? [], photo_url: null })
+      .select().single();
     if (error) return error.message;
-    setEntries(prev => [data, ...prev]); return null;
+
+    let photoUrl = null;
+    if (photo && data) {
+      const ext = photo.name.split(".").pop() || "jpg";
+      const path = `${session.user.id}/${data.id}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("entry-photos").upload(path, photo, { upsert: true });
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from("entry-photos").getPublicUrl(path);
+        photoUrl = urlData.publicUrl;
+        await supabase.from("entries").update({ photo_url: photoUrl }).eq("id", data.id);
+      }
+    }
+
+    setEntries(prev => [{ ...data, photo_url: photoUrl }, ...prev]); return null;
   };
   const handleDelete = async (id) => {
     const { error } = await supabase.from("entries").delete().eq("id", id);
