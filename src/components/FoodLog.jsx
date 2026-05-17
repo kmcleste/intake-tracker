@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import SettingsPanel from "./SettingsPanel";
 import { useReminder } from "../lib/reminder";
+import WeekTimeline from "./WeekTimeline";
 
 const MEAL_TYPES = ["Breakfast", "Morning Snack", "Lunch", "Afternoon Snack", "Dinner", "Evening Snack", "Other"];
 const COMMON_TAGS = ["dairy-free", "gluten-free", "high-fiber", "high-fat", "high-sugar", "alcohol", "caffeine", "processed", "raw", "cooked"];
@@ -405,6 +406,12 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
             </div>
           ))}
         </div>
+
+        {entries.length > 0 && (
+          <div style={{ background: "var(--c-bg-stat)", border: `1px solid var(--c-border)`, borderTop: "none", padding: "4px 12px 8px" }}>
+            <WeekTimeline entries={entries} />
+          </div>
+        )}
 
         <div style={{ padding: "14px 0 10px", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search entries…"
