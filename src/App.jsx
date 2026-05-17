@@ -1,14 +1,45 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./lib/supabase";
+import { useSettings, ZOOM } from "./lib/settings";
+import { THEMES } from "./lib/theme";
 import Auth from "./components/Auth";
 import FoodLog from "./components/FoodLog";
 import CaregiverDashboard from "./components/CaregiverDashboard";
 
 export default function App() {
-  const [session, setSession]           = useState(undefined);
-  const [caregiverFor, setCaregiverFor] = useState([]); // links where user is caregiver (active)
-  const [pendingInvites, setPendingInvites] = useState([]); // links where user is invited caregiver
-  const [caregiverView, setCaregiverView]   = useState(null); // active caregiver_link being reviewed
+  const { settings, update } = useSettings();
+  const [session, setSession]               = useState(undefined);
+  const [caregiverFor, setCaregiverFor]     = useState([]);
+  const [pendingInvites, setPendingInvites] = useState([]);
+  const [caregiverView, setCaregiverView]   = useState(null);
+
+  // Apply theme CSS variables to :root
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => {
+      const effective = settings.theme === "auto" ? (mq.matches ? "dark" : "light") : settings.theme;
+      const vars = THEMES[effective];
+      const root = document.documentElement;
+      Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [settings.theme]);
+
+  // Apply font family
+  useEffect(() => {
+    const f = settings.font === "sans"
+      ? "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      : "'Georgia', serif";
+    document.documentElement.style.setProperty("--c-font-serif", f);
+    document.documentElement.style.setProperty("--c-font-mono", "'Courier New', monospace");
+  }, [settings.font]);
+
+  // Apply font size via zoom on body
+  useEffect(() => {
+    document.body.style.zoom = ZOOM[settings.fontSize] ?? 1;
+  }, [settings.fontSize]);
 
   const loadCaregiverData = useCallback(async (user) => {
     const [{ data: active }, { data: pending }] = await Promise.all([
@@ -33,8 +64,7 @@ export default function App() {
   }, [loadCaregiverData]);
 
   const handleAcceptInvite = async (invite) => {
-    await supabase
-      .from("caregiver_links")
+    await supabase.from("caregiver_links")
       .update({ caregiver_id: session.user.id, status: "active" })
       .eq("id", invite.id);
     await loadCaregiverData(session.user);
@@ -47,8 +77,8 @@ export default function App() {
 
   if (session === undefined) {
     return (
-      <div style={{ minHeight: "100vh", background: "#edeae0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontFamily: "'Courier New', monospace", fontSize: 11, color: "#7a9a6a", letterSpacing: "0.14em" }}>LOADING…</span>
+      <div style={{ minHeight: "100vh", background: "var(--c-bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontFamily: "var(--c-font-mono)", fontSize: 11, color: "var(--c-accent-mid)", letterSpacing: "0.14em" }}>LOADING…</span>
       </div>
     );
   }
@@ -60,6 +90,8 @@ export default function App() {
       <CaregiverDashboard
         session={session}
         link={caregiverView}
+        settings={settings}
+        onUpdateSetting={update}
         onBack={() => setCaregiverView(null)}
       />
     );
@@ -70,6 +102,8 @@ export default function App() {
       session={session}
       caregiverFor={caregiverFor}
       pendingInvites={pendingInvites}
+      settings={settings}
+      onUpdateSetting={update}
       onAcceptInvite={handleAcceptInvite}
       onDeclineInvite={handleDeclineInvite}
       onSwitchToCaregiver={setCaregiverView}
