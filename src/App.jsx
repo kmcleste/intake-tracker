@@ -45,6 +45,22 @@ export default function App() {
   const rememberMe = localStorage.getItem("intake_remember") !== "false";
   const { warnVisible } = useInactivityTimeout(!rememberMe && !!session, 30 * 60 * 1000, useCallback(async () => { await supabase.auth.signOut(); }, []));
 
+  const trackSession = useCallback((userId) => {
+    const ua = navigator.userAgent;
+    const device = /Mobi|Android|iPhone|iPad/i.test(ua) ? "mobile" : "desktop";
+    const os = /iPhone|iPad|iPod/i.test(ua) ? "iOS"
+      : /Android/i.test(ua) ? "Android"
+      : /Mac/i.test(ua) ? "macOS"
+      : /Windows/i.test(ua) ? "Windows"
+      : /Linux/i.test(ua) ? "Linux" : "unknown";
+    const browser = /Edg\//i.test(ua) ? "Edge"
+      : /OPR\//i.test(ua) ? "Opera"
+      : /Chrome/i.test(ua) ? "Chrome"
+      : /Firefox/i.test(ua) ? "Firefox"
+      : /Safari/i.test(ua) ? "Safari" : "unknown";
+    supabase.from("sessions").insert({ user_id: userId, user_agent: ua, device_type: device, os, browser }).then(() => {});
+  }, []);
+
   const loadCaregiverData = useCallback(async (user) => {
     const [{ data: active }, { data: pending }] = await Promise.all([
       supabase.from("caregiver_links").select("*").eq("caregiver_id", user.id).eq("status", "active"),
@@ -64,10 +80,12 @@ export default function App() {
         }
       })
       .catch(() => setSession(null));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_ev, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((ev, session) => {
       setSession(session);
-      if (session) loadCaregiverData(session.user);
-      else { setCaregiverFor([]); setPendingInvites([]); setCaregiverView(null); }
+      if (session) {
+        loadCaregiverData(session.user);
+        if (ev === "SIGNED_IN") trackSession(session.user.id);
+      } else { setCaregiverFor([]); setPendingInvites([]); setCaregiverView(null); }
     });
     return () => subscription.unsubscribe();
   }, [loadCaregiverData]);
