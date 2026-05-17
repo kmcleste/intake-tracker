@@ -180,7 +180,19 @@ function LogForm({ onAdd, onClose }) {
 }
 
 function ExportModal({ entries, onClose }) {
-  const text = Object.entries(groupByDate(entries)).map(([date, group]) =>
+  const toDate = new Date();
+  const fromDate = new Date(); fromDate.setDate(fromDate.getDate() - 30);
+  const fmt = d => d.toISOString().slice(0, 10);
+
+  const [from, setFrom] = useState(fmt(fromDate));
+  const [to, setTo]     = useState(fmt(toDate));
+
+  const filtered = entries.filter(e => {
+    const d = e.timestamp.slice(0, 10);
+    return d >= from && d <= to;
+  });
+
+  const text = Object.entries(groupByDate(filtered)).map(([date, group]) =>
     `=== ${date} ===\n` + group.map(e =>
       `[${formatTime(e.timestamp)}] ${e.meal.toUpperCase()}\n` +
       `Foods: ${e.foods}\n` +
@@ -197,6 +209,19 @@ function ExportModal({ entries, onClose }) {
         <div style={{ background: "var(--c-accent)", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ fontFamily: serif, fontSize: 15, color: "var(--c-accent-hd)" }}>Export Log</div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--c-accent-mid)", fontSize: 20, cursor: "pointer" }}>×</button>
+        </div>
+        <div style={{ padding: "12px 16px", borderBottom: `1px solid var(--c-border)`, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", background: "var(--c-bg-stat)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <label style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em" }}>FROM</label>
+            <input type="date" value={from} onChange={e => setFrom(e.target.value)}
+              style={{ background: "var(--c-bg-card)", border: `1px solid var(--c-border)`, padding: "4px 8px", fontFamily: mono, fontSize: 12, color: "var(--c-text)", outline: "none" }} />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <label style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em" }}>TO</label>
+            <input type="date" value={to} onChange={e => setTo(e.target.value)}
+              style={{ background: "var(--c-bg-card)", border: `1px solid var(--c-border)`, padding: "4px 8px", fontFamily: mono, fontSize: 12, color: "var(--c-text)", outline: "none" }} />
+          </div>
+          <span style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", marginLeft: "auto" }}>{filtered.length} {filtered.length === 1 ? "entry" : "entries"}</span>
         </div>
         <textarea readOnly value={text} style={{ flex: 1, minHeight: 280, background: "var(--c-bg-card)", border: "none", borderBottom: `1px solid var(--c-border)`, padding: 16, fontFamily: mono, fontSize: 12, color: "var(--c-text)", lineHeight: 1.7, resize: "none", outline: "none" }} />
         <div style={{ padding: 14, display: "flex", gap: 10, justifyContent: "flex-end" }}>
