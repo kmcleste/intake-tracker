@@ -58,7 +58,10 @@ export default function App() {
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
         setSession(session);
-        if (session) loadCaregiverData(session.user);
+        if (session) {
+          loadCaregiverData(session.user);
+          supabase.rpc("purge_old_deleted_entries").then(() => {});
+        }
       })
       .catch(() => setSession(null));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_ev, session) => {

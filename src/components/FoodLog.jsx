@@ -97,7 +97,7 @@ function EntryCard({ entry, careNotes, onDelete }) {
           <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
             <button onClick={async () => { setDeleting(true); await onDelete(entry.id); }} disabled={deleting}
               style={{ background: "none", border: `1px solid var(--c-err-bdr)`, color: "var(--c-err-text)", fontFamily: mono, fontSize: 10, padding: "3px 10px", cursor: deleting ? "not-allowed" : "pointer", letterSpacing: "0.08em" }}>
-              REMOVE ENTRY
+              REMOVE
             </button>
           </div>
         </div>
@@ -341,6 +341,8 @@ function CareTeamPanel({ session, onClose, onLinksChanged }) {
 
 export default function FoodLog({ session, caregiverFor, pendingInvites, settings, onUpdateSetting, onAcceptInvite, onDeclineInvite, onSwitchToCaregiver, onLinksChanged }) {
   const [entries, setEntries]         = useState([]);
+  const [deletedEntries, setDeletedEntries] = useState([]);
+  const [showDeleted, setShowDeleted] = useState(false);
   const [careNoteMap, setCareNoteMap] = useState({});
   const [loading, setLoading]         = useState(true);
   const [showForm, setShowForm]       = useState(false);
@@ -358,7 +360,9 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
         supabase.from("entries").select("*").eq("user_id", session.user.id).order("timestamp", { ascending: false }),
         supabase.from("caregiver_notes").select("*").eq("patient_id", session.user.id).eq("visible_to_patient", true),
       ]);
-      setEntries(ents || []);
+      const allEnts = ents || [];
+      setEntries(allEnts.filter(e => !e.deleted_at));
+      setDeletedEntries(allEnts.filter(e => e.deleted_at));
       const map = {};
       (notes || []).forEach(n => { if (!map[n.entry_id]) map[n.entry_id] = []; map[n.entry_id].push(n); });
       setCareNoteMap(map); setLoading(false);
@@ -388,10 +392,31 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
     setEntries(prev => [{ ...data, photo_url: photoUrl }, ...prev]); return null;
   };
   const handleDelete = async (id) => {
+    const now = new Date().toISOString();
+    const { error } = await supabase.from("entries").update({ deleted_at: now }).eq("id", id);
+    if (!error) {
+      const entry = entries.find(e => e.id === id);
+      setEntries(prev => prev.filter(e => e.id !== id));
+      setDeletedEntries(prev => [{ ...entry, deleted_at: now }, ...prev]);
+      log(session.user.id, session.user.id, "entry.soft_delete", "entry", id);
+    }
+  };
+
+  const handleRestore = async (id) => {
+    const { error } = await supabase.from("entries").update({ deleted_at: null }).eq("id", id);
+    if (!error) {
+      const entry = deletedEntries.find(e => e.id === id);
+      setDeletedEntries(prev => prev.filter(e => e.id !== id));
+      setEntries(prev => [{ ...entry, deleted_at: null }, ...prev]);
+      log(session.user.id, session.user.id, "entry.restore", "entry", id);
+    }
+  };
+
+  const handleHardDelete = async (id) => {
     const { error } = await supabase.from("entries").delete().eq("id", id);
     if (!error) {
-      log(session.user.id, session.user.id, "entry.delete", "entry", id);
-      setEntries(prev => prev.filter(e => e.id !== id));
+      setDeletedEntries(prev => prev.filter(e => e.id !== id));
+      log(session.user.id, session.user.id, "entry.hard_delete", "entry", id);
     }
   };
 
@@ -489,6 +514,44 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
             {group.map(e => <EntryCard key={e.id} entry={e} careNotes={careNoteMap[e.id] || []} onDelete={handleDelete} />)}
           </div>
         ))}
+
+        {deletedEntries.length > 0 && (
+          <div style={{ marginTop: 32, borderTop: `1px dashed var(--c-border)`, paddingTop: 16 }}>
+            <button onClick={() => setShowDeleted(p => !p)}
+              style={{ background: "none", border: "none", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: 0, marginBottom: showDeleted ? 12 : 0 }}>
+              <span style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.12em" }}>
+                RECENTLY DELETED ({deletedEntries.length})
+              </span>
+              <span style={{ color: "var(--c-text-subtle)", fontSize: 12, transform: showDeleted ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>▾</span>
+            </button>
+            {showDeleted && deletedEntries.map(e => (
+              <div key={e.id} style={{ background: "var(--c-bg-card)", border: `1px solid var(--c-border-card)`, borderLeft: "3px solid var(--c-border)", marginBottom: 8, opacity: 0.7, padding: "10px 14px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 3 }}>
+                      <span style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.08em" }}>{formatTime(e.timestamp)}</span>
+                      <span style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-subtle)", padding: "1px 6px", border: `1px solid var(--c-border)`, textTransform: "uppercase" }}>{e.meal}</span>
+                    </div>
+                    <div style={{ fontFamily: serif, fontSize: 13, color: "var(--c-text-muted)", lineHeight: 1.4 }}>{e.foods}</div>
+                    <div style={{ fontFamily: mono, fontSize: 9, color: "var(--c-text-subtle)", marginTop: 4, letterSpacing: "0.06em" }}>
+                      Deleted {formatDate(e.deleted_at)} · permanent in {Math.max(0, 30 - Math.floor((Date.now() - new Date(e.deleted_at)) / 86400000))} days
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                    <button onClick={() => handleRestore(e.id)}
+                      style={{ background: "var(--c-accent)", border: "none", color: "var(--c-accent-lt)", fontFamily: mono, fontSize: 9, padding: "4px 10px", cursor: "pointer", letterSpacing: "0.08em" }}>
+                      RESTORE
+                    </button>
+                    <button onClick={() => handleHardDelete(e.id)}
+                      style={{ background: "none", border: `1px solid var(--c-err-bdr)`, color: "var(--c-err-text)", fontFamily: mono, fontSize: 9, padding: "4px 8px", cursor: "pointer", letterSpacing: "0.08em" }}>
+                      DELETE FOREVER
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {showForm     && <LogForm onAdd={handleAdd} onClose={() => setShowForm(false)} />}

@@ -210,7 +210,7 @@ export default function CaregiverDashboard({ session, link, settings, onUpdateSe
   useEffect(() => {
     const load = async () => {
       const [{ data: ents }, { data: notes }] = await Promise.all([
-        supabase.from("entries").select("*").eq("user_id", link.patient_id).order("timestamp", { ascending: false }),
+        supabase.from("entries").select("*").eq("user_id", link.patient_id).is("deleted_at", null).order("timestamp", { ascending: false }),
         supabase.from("caregiver_notes").select("*").eq("caregiver_id", session.user.id).eq("patient_id", link.patient_id),
       ]);
       setEntries(ents || []);
