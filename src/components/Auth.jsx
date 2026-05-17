@@ -29,9 +29,10 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(error.message);
     } else {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) { setError(error.message); }
-      else { setMessage("Check your email to confirm, then sign in."); setMode("login"); }
+      else if (data?.user?.identities?.length === 0) { setError("An account with this email already exists. Sign in instead."); setMode("login"); }
+      else { setMessage("Account created — you can sign in now."); setMode("login"); }
     }
     setLoading(false);
   };
