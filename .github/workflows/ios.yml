@@ -30,26 +30,29 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync ios
 
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: ios/App/Pods
-          key: pods-${{ hashFiles('ios/App/Podfile.lock') }}
-          restore-keys: pods-
+      # Capacitor 8 uses Swift Package Manager — no CocoaPods needed.
+      # SPM dependencies are resolved automatically by xcodebuild.
+      - name: Install xcpretty
+        run: gem install xcpretty --no-document
 
-      - name: Install CocoaPods
-        run: cd ios/App && pod install --repo-update
+      - name: Resolve SPM dependencies
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -derivedDataPath ios/App/build
 
       - name: Build for simulator (unsigned)
         run: |
+          set -o pipefail
           xcodebuild \
-            -workspace ios/App/App.xcworkspace \
+            -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Debug \
             -sdk iphonesimulator \
             -derivedDataPath ios/App/build \
             CODE_SIGNING_ALLOWED=NO \
-            | xcpretty || true
+            | xcpretty
 
       - name: Zip simulator build
         run: |
@@ -64,13 +67,18 @@ jobs:
           retention-days: 30
 
       # ── Signed IPA for real device / TestFlight (only on version tags) ─
-      # To enable, add these secrets in GitHub → Settings → Secrets:
-      #   IOS_CERTIFICATE_BASE64       base64-encoded .p12 certificate
+      # Required secrets:
+      #   IOS_CERTIFICATE_BASE64       base64-encoded .p12 distribution certificate
       #   IOS_CERTIFICATE_PASSWORD     .p12 password
       #   IOS_PROVISIONING_PROFILE     base64-encoded .mobileprovision
-      #   IOS_TEAM_ID                  your Apple Team ID (e.g. ABCD1234EF)
+      #   IOS_TEAM_ID                  Apple Team ID (e.g. ABCD1234EF)
       - name: Import certificate & provisioning profile
         if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+          KEYCHAIN_PASSWORD: ${{ github.run_id }}
         run: |
           CERT_PATH=$RUNNER_TEMP/certificate.p12
           PP_PATH=$RUNNER_TEMP/profile.mobileprovision
@@ -88,17 +96,13 @@ jobs:
 
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
-        env:
-          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
-          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
-          KEYCHAIN_PASSWORD: ${{ github.run_id }}
 
       - name: Build signed archive
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
+          set -o pipefail
           xcodebuild \
-            -workspace ios/App/App.xcworkspace \
+            -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
@@ -110,7 +114,7 @@ jobs:
       - name: Export IPA
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          cat > /tmp/export-options.plist << 'EOF'
+          cat > /tmp/export-options.plist << EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
