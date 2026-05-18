@@ -5,6 +5,9 @@ import SettingsPanel from "./SettingsPanel";
 import { useReminder } from "../lib/reminder";
 import WeekTimeline from "./WeekTimeline";
 import PrivacyModal from "./PrivacyModal";
+import EditEntryModal from "./EditEntryModal";
+import TrendsPanel from "./TrendsPanel";
+import { filterByDateRange, formatAsText, formatAsCSV, formatAsJSON, getExportFilename } from "../lib/exporters";
 
 const MEAL_TYPES = ["Breakfast", "Morning Snack", "Lunch", "Afternoon Snack", "Dinner", "Evening Snack", "Other"];
 const COMMON_TAGS = ["dairy-free", "gluten-free", "high-fiber", "high-fat", "high-sugar", "alcohol", "caffeine", "processed", "raw", "cooked"];
@@ -38,7 +41,7 @@ function Tag({ label, onRemove, onClick, active }) {
   );
 }
 
-function EntryCard({ entry, careNotes, onDelete }) {
+function EntryCard({ entry, careNotes, onDelete, onEdit }) {
   const [expanded, setExpanded] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -94,7 +97,11 @@ function EntryCard({ entry, careNotes, onDelete }) {
               ))}
             </div>
           )}
-          <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
+          <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <button onClick={() => onEdit(entry)}
+              style={{ background: "none", border: `1px solid var(--c-border)`, color: "var(--c-text-mid)", fontFamily: mono, fontSize: 10, padding: "3px 10px", cursor: "pointer", letterSpacing: "0.08em" }}>
+              EDIT
+            </button>
             <button onClick={async () => { setDeleting(true); await onDelete(entry.id); }} disabled={deleting}
               style={{ background: "none", border: `1px solid var(--c-err-bdr)`, color: "var(--c-err-text)", fontFamily: mono, fontSize: 10, padding: "3px 10px", cursor: deleting ? "not-allowed" : "pointer", letterSpacing: "0.08em" }}>
               REMOVE
@@ -221,22 +228,49 @@ function ExportModal({ entries, onClose }) {
 
   const [from, setFrom] = useState(fmt(fromDate));
   const [to, setTo]     = useState(fmt(toDate));
+  const [format, setFormat] = useState("text");
 
-  const filtered = entries.filter(e => {
-    const d = e.timestamp.slice(0, 10);
-    return d >= from && d <= to;
-  });
+  const filtered = filterByDateRange(entries, from, to);
 
-  const text = Object.entries(groupByDate(filtered)).map(([date, group]) =>
-    `=== ${date} ===\n` + group.map(e =>
-      `[${formatTime(e.timestamp)}] ${e.meal.toUpperCase()}\n` +
-      `Foods: ${e.foods}\n` +
-      (e.wellbeing ? `Wellbeing: ${WELLBEING[e.wellbeing]} (${e.wellbeing}/5)\n` : "") +
-      (e.symptoms?.length ? `Symptoms: ${e.symptoms.join(", ")}\n` : "") +
-      (e.tags.length ? `Tags: ${e.tags.join(", ")}\n` : "") +
-      (e.notes ? `Notes: ${e.notes}\n` : "")
-    ).join("\n") + "\n"
-  ).join("\n");
+  const content =
+    format === "csv"  ? formatAsCSV(filtered) :
+    format === "json" ? formatAsJSON(filtered) :
+    formatAsText(filtered);
+
+  const ext = format === "text" ? "txt" : format;
+
+  const handleDownload = () => {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = getExportFilename(ext);
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const tabBtn = (id, label) => {
+    const active = format === id;
+    return (
+      <button
+        key={id}
+        onClick={() => setFormat(id)}
+        data-active={active ? "true" : "false"}
+        style={{
+          background: active ? "var(--c-accent)" : "var(--c-bg-stat)",
+          border: `1px solid ${active ? "var(--c-accent-bdr)" : "var(--c-border)"}`,
+          color: active ? "var(--c-accent-lt)" : "var(--c-text-mid)",
+          padding: "4px 12px",
+          fontFamily: mono,
+          fontSize: 10,
+          cursor: "pointer",
+          letterSpacing: "0.08em",
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "var(--c-overlay)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -256,11 +290,17 @@ function ExportModal({ entries, onClose }) {
             <input type="date" value={to} onChange={e => setTo(e.target.value)}
               style={{ background: "var(--c-bg-card)", border: `1px solid var(--c-border)`, padding: "4px 8px", fontFamily: mono, fontSize: 12, color: "var(--c-text)", outline: "none" }} />
           </div>
-          <span style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", marginLeft: "auto" }}>{filtered.length} {filtered.length === 1 ? "entry" : "entries"}</span>
+          <div style={{ display: "flex", gap: 4, marginLeft: "auto", alignItems: "center" }}>
+            {tabBtn("text", "TEXT")}
+            {tabBtn("csv", "CSV")}
+            {tabBtn("json", "JSON")}
+          </div>
+          <span style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)" }}>{filtered.length} {filtered.length === 1 ? "entry" : "entries"}</span>
         </div>
-        <textarea readOnly value={text} style={{ flex: 1, minHeight: 280, background: "var(--c-bg-card)", border: "none", borderBottom: `1px solid var(--c-border)`, padding: 16, fontFamily: mono, fontSize: 12, color: "var(--c-text)", lineHeight: 1.7, resize: "none", outline: "none" }} />
+        <textarea readOnly value={content} style={{ flex: 1, minHeight: 280, background: "var(--c-bg-card)", border: "none", borderBottom: `1px solid var(--c-border)`, padding: 16, fontFamily: mono, fontSize: 12, color: "var(--c-text)", lineHeight: 1.7, resize: "none", outline: "none" }} />
         <div style={{ padding: 14, display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={() => navigator.clipboard.writeText(text)} style={{ background: "var(--c-accent)", border: "none", padding: "8px 18px", fontFamily: mono, fontSize: 11, color: "var(--c-accent-lt)", cursor: "pointer", letterSpacing: "0.1em" }}>COPY TO CLIPBOARD</button>
+          <button onClick={handleDownload} style={{ background: "var(--c-accent)", border: "none", padding: "8px 18px", fontFamily: mono, fontSize: 11, color: "var(--c-accent-lt)", cursor: "pointer", letterSpacing: "0.1em" }}>DOWNLOAD</button>
+          <button onClick={() => navigator.clipboard.writeText(content)} style={{ background: "none", border: `1px solid var(--c-accent-mid)`, padding: "8px 16px", fontFamily: mono, fontSize: 11, color: "var(--c-accent)", cursor: "pointer", letterSpacing: "0.08em" }}>COPY</button>
           <button onClick={onClose} style={{ background: "none", border: `1px solid var(--c-border)`, padding: "8px 16px", fontFamily: mono, fontSize: 11, color: "var(--c-text-subtle)", cursor: "pointer", letterSpacing: "0.08em" }}>CLOSE</button>
         </div>
       </div>
@@ -351,6 +391,8 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
   const [showCareTeam, setShowCareTeam] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPrivacy, setShowPrivacy]   = useState(false);
+  const [showTrends, setShowTrends]     = useState(false);
+  const [editEntry, setEditEntry]       = useState(null);
   const [filterTag, setFilterTag]     = useState(null);
   const [search, setSearch]           = useState("");
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -432,6 +474,16 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
     }
   };
 
+  const handleSaveEdit = async (fields) => {
+    const id = editEntry.id;
+    const { error } = await supabase.from("entries").update(fields).eq("id", id);
+    if (!error) {
+      setEntries(prev => prev.map(e => e.id === id ? { ...e, ...fields } : e));
+      log(session.user.id, session.user.id, "entry.update", "entry", id);
+    }
+    setEditEntry(null);
+  };
+
   const allTags = [...new Set(entries.flatMap(e => e.tags))];
   const filtered = entries.filter(e => {
     const matchTag = !filterTag || e.tags.includes(filterTag);
@@ -472,6 +524,7 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
               <button onClick={() => setShowCareTeam(true)} style={{ background: "none", border: `1px solid var(--c-border)`, color: "var(--c-text-subtle)", padding: "8px 14px", fontFamily: mono, fontSize: 10, cursor: "pointer", letterSpacing: "0.1em" }}>CARE TEAM</button>
               <button onClick={() => setShowPrivacy(true)} style={{ background: "none", border: `1px solid var(--c-border)`, color: "var(--c-text-subtle)", padding: "8px 14px", fontFamily: mono, fontSize: 10, cursor: "pointer", letterSpacing: "0.1em" }}>PRIVACY</button>
               <button onClick={() => supabase.auth.signOut()} style={{ background: "none", border: `1px solid var(--c-border)`, color: "var(--c-text-subtle)", padding: "8px 14px", fontFamily: mono, fontSize: 10, cursor: "pointer", letterSpacing: "0.1em" }}>SIGN OUT</button>
+              <button onClick={() => setShowTrends(true)} style={{ background: "none", border: `1px solid var(--c-border)`, color: "var(--c-text-subtle)", padding: "8px 14px", fontFamily: mono, fontSize: 10, cursor: "pointer", letterSpacing: "0.1em" }}>TRENDS</button>
               <button onClick={() => setShowExport(true)} style={{ background: "none", border: `1px solid var(--c-accent-mid)`, color: "var(--c-accent)", padding: "8px 14px", fontFamily: mono, fontSize: 10, cursor: "pointer", letterSpacing: "0.1em" }}>EXPORT</button>
               <button onClick={() => setShowForm(true)} style={{ background: "var(--c-accent)", border: "none", color: "var(--c-accent-lt)", padding: "8px 18px", fontFamily: mono, fontSize: 10, cursor: "pointer", letterSpacing: "0.1em" }}>+ LOG ENTRY</button>
             </div>
@@ -533,7 +586,7 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
               <div style={{ flex: 1, height: 1, background: "var(--c-border)" }} />
               <span style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)" }}>{group.length} {group.length === 1 ? "entry" : "entries"}</span>
             </div>
-            {group.map(e => <EntryCard key={e.id} entry={e} careNotes={careNoteMap[e.id] || []} onDelete={handleDelete} />)}
+            {group.map(e => <EntryCard key={e.id} entry={e} careNotes={careNoteMap[e.id] || []} onDelete={handleDelete} onEdit={setEditEntry} />)}
           </div>
         ))}
 
@@ -581,6 +634,8 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
       {showCareTeam && <CareTeamPanel session={session} onClose={() => setShowCareTeam(false)} onLinksChanged={onLinksChanged} />}
       {showSettings && <SettingsPanel settings={settings} update={onUpdateSetting} onClose={() => setShowSettings(false)} notifEnabled={notifEnabled} onToggleNotif={toggleNotif} />}
       {showPrivacy  && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+      {showTrends   && <TrendsPanel entries={entries} onClose={() => setShowTrends(false)} />}
+      {editEntry    && <EditEntryModal entry={editEntry} onSave={handleSaveEdit} onClose={() => setEditEntry(null)} />}
     </div>
   );
 }
