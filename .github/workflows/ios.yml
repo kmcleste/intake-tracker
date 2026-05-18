@@ -66,6 +66,21 @@ jobs:
           path: ios/App/build/Build/Products/Debug-iphonesimulator/App-simulator.zip
           retention-days: 30
 
+      - name: Publish simulator build to nightly release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: "Nightly Build"
+          prerelease: true
+          make_latest: false
+          body: |
+            Automated debug build from the latest commit on `main`.
+            Updated on every push — not for production use.
+          files: ios/App/build/Build/Products/Debug-iphonesimulator/App-simulator.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       # ── Signed IPA for real device / TestFlight (only on version tags) ─
       # Required secrets:
       #   IOS_CERTIFICATE_BASE64       base64-encoded .p12 distribution certificate
@@ -137,3 +152,11 @@ jobs:
           name: ios-ipa-${{ github.ref_name }}
           path: ios/App/build/ipa/*.ipa
           retention-days: 90
+
+      - name: Publish IPA to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ios/App/build/ipa/*.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
