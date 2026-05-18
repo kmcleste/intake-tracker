@@ -119,3 +119,7 @@ npx playwright install chromium   # install browser if needed
 ```
 
 Coverage is reported for `src/lib/**` and `src/components/**`.
+
+## License
+
+Proprietary — © 2026 kmcleste. All rights reserved. See [LICENSE](LICENSE).
