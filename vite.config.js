@@ -3,6 +3,19 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/__tests__/setup.js"],
+    include: ["src/**/*.test.{js,jsx}"],
+    exclude: ["e2e/**", "node_modules/**"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov", "html"],
+      include: ["src/lib/**", "src/components/**", "src/App.jsx"],
+      exclude: ["src/__tests__/**"],
+    },
+  },
   plugins: [
     react(),
     VitePWA({
