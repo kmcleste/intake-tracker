@@ -121,7 +121,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk-${{ github.ref_name }}
-          path: android/app/build/outputs/apk/release/app-release.apk
+          path: android/app/build/outputs/apk/release/*.apk
           retention-days: 90
 
       - name: Publish release AAB and APK to GitHub Release
@@ -130,6 +130,6 @@ jobs:
         with:
           files: |
             android/app/build/outputs/bundle/release/app-release.aab
-            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/apk/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
