@@ -7,3 +7,14 @@ dist
 coverage/
 playwright-report/
 test-results/
+
+# Android build artifacts
+android/.gradle/
+android/app/build/
+android/local.properties
+
+# iOS build artifacts & CocoaPods
+ios/App/build/
+ios/App/Pods/
+ios/App/.xcode.env.local
+ios/App/App.xcworkspace/xcuserdata/
