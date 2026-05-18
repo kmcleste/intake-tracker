@@ -51,8 +51,8 @@ test("REG-003: signing up with existing email shows error (mocked via empty iden
   await page.reload();
 
   // Switch to signup mode
-  await page.getByText(/need an account/i).click();
-  await expect(page.getByText("CREATE ACCOUNT")).toBeVisible();
+  await page.getByRole("button", { name: /need an account/i }).click();
+  await expect(page.getByText("CREATE ACCOUNT", { exact: true })).toBeVisible();
 
   // The mock client's signUp returns { data: {}, error: null } — no identity check
   // This test verifies the UI flow compiles and mode-switch works correctly
@@ -85,7 +85,7 @@ test("REG-004b: remember me checkbox honours false in localStorage", async ({ pa
 // ── Bug 5: Signup mode hides remember me ──────────────────────────────────────
 test("REG-005: Remember me is hidden in signup mode", async ({ page }) => {
   await page.goto("/");
-  await page.getByText(/need an account/i).click();
+  await page.getByRole("button", { name: /need an account/i }).click();
   await expect(page.getByText(/remember me/i)).not.toBeVisible();
 });
 
@@ -95,7 +95,7 @@ test("REG-006: switching mode clears any visible error", async ({ page }) => {
   await page.goto("/");
   // Try to log in without a real user — mock client doesn't return errors by default,
   // but we can verify the mode switch itself doesn't carry old state
-  await page.getByText(/need an account/i).click();
+  await page.getByRole("button", { name: /need an account/i }).click();
   // Errors section should be empty when freshly switching
   const errorBox = page.locator('[style*="bg-error"], [style*="err-bdr"]');
   // No error boxes should be visible right after mode switch

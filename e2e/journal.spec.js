@@ -13,7 +13,7 @@ async function signIn(page) {
   await page.locator('input[type="password"]').fill(PASSWORD);
   await page.getByRole("button", { name: /sign in/i }).click();
   // Wait for the journal UI to load
-  await expect(page.locator("body")).not.toContainText("Food & Symptom Journal", { timeout: 5000 });
+  await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible({ timeout: 5000 });
 }
 
 test.describe("Journal — entry creation", () => {

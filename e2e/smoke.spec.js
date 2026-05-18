@@ -19,7 +19,7 @@ test.describe("Smoke — app shell", () => {
 
   test("shows SIGN IN header by default", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("SIGN IN")).toBeVisible();
+    await expect(page.getByText("SIGN IN", { exact: true })).toBeVisible();
   });
 
   test("email and password inputs are present", async ({ page }) => {

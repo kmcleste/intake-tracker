@@ -22,7 +22,7 @@ test.describe("Auth — sign in", () => {
 
   test("successful login shows the journal UI", async ({ page }) => {
     await signIn(page);
-    await expect(page.getByText(/DAILY FOOD JOURNAL|Food Journal|JOURNAL/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible({ timeout: 5000 });
   });
 
   test("login with empty password shows disabled button", async ({ page }) => {
@@ -49,8 +49,8 @@ test.describe("Auth — mode switching", () => {
 
   test("clicking 'Need an account' switches to signup mode", async ({ page }) => {
     await page.goto("/");
-    await page.getByText(/need an account/i).click();
-    await expect(page.getByText("CREATE ACCOUNT")).toBeVisible();
+    await page.getByRole("button", { name: /need an account/i }).click();
+    await expect(page.getByText("CREATE ACCOUNT", { exact: true })).toBeVisible();
   });
 
   test("remember me checkbox is visible in login mode", async ({ page }) => {
@@ -60,15 +60,15 @@ test.describe("Auth — mode switching", () => {
 
   test("remember me checkbox is NOT visible in signup mode", async ({ page }) => {
     await page.goto("/");
-    await page.getByText(/need an account/i).click();
+    await page.getByRole("button", { name: /need an account/i }).click();
     await expect(page.getByText(/remember me/i)).not.toBeVisible();
   });
 
   test("toggling back from signup to login shows SIGN IN", async ({ page }) => {
     await page.goto("/");
-    await page.getByText(/need an account/i).click();
-    await page.getByText(/already have an account/i).click();
-    await expect(page.getByText("SIGN IN")).toBeVisible();
+    await page.getByRole("button", { name: /need an account/i }).click();
+    await page.getByRole("button", { name: /already have an account/i }).click();
+    await expect(page.getByText("SIGN IN", { exact: true })).toBeVisible();
   });
 });
 
