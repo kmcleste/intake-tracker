@@ -54,6 +54,23 @@ test.describe("Journal — entry creation", () => {
 test.describe("Journal — 7-day timeline", () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page);
+    // WeekTimeline only renders when entries.length > 0. Inject mock entries
+    // into localStorage then reload so FoodLog picks them up.
+    await page.evaluate(() => {
+      const userId = "mock::journal@example.com";
+      const now = Date.now();
+      const entries = Array.from({ length: 3 }, (_, i) => ({
+        id: `mock-entry-${i}`,
+        user_id: userId,
+        timestamp: new Date(now - i * 86400000).toISOString(),
+        meal: "breakfast", foods: "oatmeal", notes: "",
+        tags: [], wellbeing: 4, symptoms: [],
+        created_at: new Date(now - i * 86400000).toISOString(),
+      }));
+      localStorage.setItem("intake_entries", JSON.stringify(entries));
+    });
+    await page.reload();
+    await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible({ timeout: 8000 });
   });
 
   test("7-day overview strip is visible", async ({ page }) => {

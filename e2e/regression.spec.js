@@ -96,9 +96,10 @@ test("REG-006: switching mode clears any visible error", async ({ page }) => {
   // Try to log in without a real user — mock client doesn't return errors by default,
   // but we can verify the mode switch itself doesn't carry old state
   await page.getByRole("button", { name: /need an account/i }).click();
-  // Errors section should be empty when freshly switching
-  const errorBox = page.locator('[style*="bg-error"], [style*="err-bdr"]');
-  // No error boxes should be visible right after mode switch
+  // Errors section should be empty when freshly switching.
+  // Scope to #root to avoid matching <html> which has --c-bg-error in its
+  // inline CSS variable declarations applied by the theme.
+  const errorBox = page.locator('#root').locator('[style*="bg-error"], [style*="err-bdr"]');
   const visibleErrors = await errorBox.filter({ hasText: /.+/ }).count();
   expect(visibleErrors).toBe(0);
 });
