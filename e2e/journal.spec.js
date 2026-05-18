@@ -78,7 +78,8 @@ test.describe("Journal — 7-day timeline", () => {
   });
 
   test("timeline shows 7 day columns", async ({ page }) => {
-    // Count day abbreviations in the timeline area
+    // Overview is collapsed by default — expand it first
+    await page.getByText("7-DAY OVERVIEW").click();
     const dayText = await page.getByText(/^(MON|TUE|WED|THU|FRI|SAT|SUN)$/).count();
     expect(dayText).toBe(7);
   });
