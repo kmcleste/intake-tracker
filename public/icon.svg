@@ -1,4 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#2a3d2e"/>
-  <text x="256" y="320" font-family="Georgia, serif" font-size="280" text-anchor="middle" fill="#c8dca9">J</text>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2a3d2e"/>
+      <stop offset="100%" style="stop-color:#162218"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a6b3a;stop-opacity:0.6"/>
+      <stop offset="100%" style="stop-color:#2a4a1e;stop-opacity:0.2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <!-- Outer decorative ring -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="url(#ring)" stroke-width="1.5"/>
+  <!-- Inner decorative ring -->
+  <circle cx="256" cy="256" r="195" fill="none" stroke="#3d6830" stroke-width="0.8" opacity="0.4"/>
+
+  <!-- Journal "J" -->
+  <text x="258" y="335"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="310"
+        font-weight="400"
+        text-anchor="middle"
+        fill="#c8dca9"
+        letter-spacing="-4">J</text>
+
+  <!-- Small leaf sprig top-right — a nod to food/wellness -->
+  <g transform="translate(330, 118) rotate(-30)">
+    <path d="M0,0 Q18,-28 36,-22 Q28,10 0,12 Z" fill="#92ba78" opacity="0.85"/>
+    <path d="M0,0 Q-14,-24 -30,-16 Q-20,12 0,12 Z" fill="#b4d894" opacity="0.65"/>
+    <line x1="0" y1="0" x2="0" y2="38" stroke="#7aaa60" stroke-width="2" opacity="0.7"/>
+  </g>
 </svg>
