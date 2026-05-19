@@ -24,7 +24,7 @@ android {
             // then set the four env vars in the GitHub Actions workflow.
             if (System.getenv("KEYSTORE_BASE64")) {
                 def keystoreFile = file("${buildDir}/signing.jks")
-                keystoreFile.bytes = System.getenv("KEYSTORE_BASE64").decodeBase64()
+                keystoreFile.bytes = System.getenv("KEYSTORE_BASE64").trim().decodeBase64()
                 signingConfig signingConfigs.create("release") {
                     storeFile keystoreFile
                     storePassword System.getenv("STORE_PASSWORD")
