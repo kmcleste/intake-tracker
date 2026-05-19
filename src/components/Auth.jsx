@@ -73,8 +73,8 @@ export default function Auth() {
                 {error}
               </div>
             )}
-            <div><label style={labelStyle}>Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete={mode === "login" ? "current-password" : "new-password"} style={inputStyle} /></div>
+            <div><label htmlFor="auth-email" style={labelStyle}>Email</label><input id="auth-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" style={inputStyle} /></div>
+            <div><label htmlFor="auth-password" style={labelStyle}>Password</label><input id="auth-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete={mode === "login" ? "current-password" : "new-password"} style={inputStyle} /></div>
             {mode === "login" && (
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontFamily: mono, fontSize: 11, color: "var(--c-text-subtle)", letterSpacing: "0.06em" }}>
                 <input type="checkbox" checked={rememberMe} onChange={e => { setRememberMe(e.target.checked); localStorage.setItem("intake_remember", e.target.checked); }} style={{ accentColor: "var(--c-accent)", width: 14, height: 14 }} />

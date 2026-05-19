@@ -156,8 +156,8 @@ function LogForm({ onAdd, onClose }) {
         </div>
         <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 18 }}>
           {error && <div style={{ background: "var(--c-bg-error)", border: `1px solid var(--c-err-bdr)`, padding: "9px 12px", fontFamily: mono, fontSize: 11, color: "var(--c-err-text-dk)" }}>{error}</div>}
-          <div><label style={lbl}>Meal / Occasion</label><select value={meal} onChange={e => setMeal(e.target.value)} style={{ ...input, cursor: "pointer" }}>{MEAL_TYPES.map(m => <option key={m}>{m}</option>)}</select></div>
-          <div><label style={lbl}>Foods & Beverages</label><textarea ref={foodsRef} value={foods} onChange={e => setFoods(e.target.value)} placeholder="Describe what you ate and drank…" rows={3} style={{ ...input, lineHeight: 1.6 }} /></div>
+          <div><label htmlFor="logform-meal" style={lbl}>Meal / Occasion</label><select id="logform-meal" value={meal} onChange={e => setMeal(e.target.value)} style={{ ...input, cursor: "pointer" }}>{MEAL_TYPES.map(m => <option key={m}>{m}</option>)}</select></div>
+          <div><label htmlFor="logform-foods" style={lbl}>Foods & Beverages</label><textarea id="logform-foods" ref={foodsRef} value={foods} onChange={e => setFoods(e.target.value)} placeholder="Describe what you ate and drank…" rows={3} style={{ ...input, lineHeight: 1.6 }} /></div>
           <div>
             <label style={lbl}>Photo <span style={{ opacity: 0.6, fontWeight: 400 }}>(optional)</span></label>
             <input ref={photoInputRef} type="file" accept="image/*" capture="environment"
@@ -203,12 +203,12 @@ function LogForm({ onAdd, onClose }) {
             <label style={lbl}>Properties / Flags</label>
             <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>{COMMON_TAGS.map(t => <Tag key={t} label={t} active={tags.includes(t)} onClick={() => toggleTag(t)} />)}</div>
             <div style={{ display: "flex", gap: 6 }}>
-              <input value={customTag} onChange={e => setCustomTag(e.target.value)} onKeyDown={e => e.key === "Enter" && addCustomTag()} placeholder="custom tag…" style={{ ...input, flex: 1, padding: "5px 8px" }} />
+              <input aria-label="Custom tag" value={customTag} onChange={e => setCustomTag(e.target.value)} onKeyDown={e => e.key === "Enter" && addCustomTag()} placeholder="custom tag…" style={{ ...input, flex: 1, padding: "5px 8px" }} />
               <button onClick={addCustomTag} style={{ background: "var(--c-tag-bg)", border: `1px solid var(--c-border)`, padding: "5px 12px", fontFamily: mono, fontSize: 10, cursor: "pointer", color: "var(--c-text-mid)", letterSpacing: "0.08em" }}>ADD</button>
             </div>
             {tags.length > 0 && <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 8 }}>{tags.map(t => <Tag key={t} label={t} active onRemove={() => setTags(p => p.filter(x => x !== t))} />)}</div>}
           </div>
-          <div><label style={lbl}>Additional Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Anything else you noticed — timing, how you felt, reactions…" rows={4} style={{ ...input, lineHeight: 1.7, fontStyle: "italic" }} /></div>
+          <div><label htmlFor="logform-notes" style={lbl}>Additional Notes</label><textarea id="logform-notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Anything else you noticed — timing, how you felt, reactions…" rows={4} style={{ ...input, lineHeight: 1.7, fontStyle: "italic" }} /></div>
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", paddingTop: 4 }}>
             <button onClick={onClose} style={{ background: "none", border: `1px solid var(--c-border)`, padding: "8px 18px", fontFamily: mono, fontSize: 11, color: "var(--c-text-subtle)", cursor: "pointer", letterSpacing: "0.08em" }}>CANCEL</button>
             <button onClick={handleSubmit} disabled={!ok} style={{ background: ok ? "var(--c-accent)" : "var(--c-border)", border: "none", padding: "8px 22px", fontFamily: mono, fontSize: 11, color: ok ? "var(--c-accent-lt)" : "var(--c-text-subtle)", cursor: ok ? "pointer" : "not-allowed", letterSpacing: "0.1em" }}>
@@ -281,13 +281,13 @@ function ExportModal({ entries, onClose }) {
         </div>
         <div style={{ padding: "12px 16px", borderBottom: `1px solid var(--c-border)`, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", background: "var(--c-bg-stat)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <label style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em" }}>FROM</label>
-            <input type="date" value={from} onChange={e => setFrom(e.target.value)}
+            <label htmlFor="export-from" style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em" }}>FROM</label>
+            <input id="export-from" type="date" value={from} onChange={e => setFrom(e.target.value)}
               style={{ background: "var(--c-bg-card)", border: `1px solid var(--c-border)`, padding: "4px 8px", fontFamily: mono, fontSize: 12, color: "var(--c-text)", outline: "none" }} />
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <label style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em" }}>TO</label>
-            <input type="date" value={to} onChange={e => setTo(e.target.value)}
+            <label htmlFor="export-to" style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.1em" }}>TO</label>
+            <input id="export-to" type="date" value={to} onChange={e => setTo(e.target.value)}
               style={{ background: "var(--c-bg-card)", border: `1px solid var(--c-border)`, padding: "4px 8px", fontFamily: mono, fontSize: 12, color: "var(--c-text)", outline: "none" }} />
           </div>
           <div style={{ display: "flex", gap: 4, marginLeft: "auto", alignItems: "center" }}>
@@ -297,7 +297,7 @@ function ExportModal({ entries, onClose }) {
           </div>
           <span style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)" }}>{filtered.length} {filtered.length === 1 ? "entry" : "entries"}</span>
         </div>
-        <textarea readOnly value={content} style={{ flex: 1, minHeight: 280, background: "var(--c-bg-card)", border: "none", borderBottom: `1px solid var(--c-border)`, padding: 16, fontFamily: mono, fontSize: 12, color: "var(--c-text)", lineHeight: 1.7, resize: "none", outline: "none" }} />
+        <textarea aria-label="Export preview" readOnly value={content} style={{ flex: 1, minHeight: 280, background: "var(--c-bg-card)", border: "none", borderBottom: `1px solid var(--c-border)`, padding: 16, fontFamily: mono, fontSize: 12, color: "var(--c-text)", lineHeight: 1.7, resize: "none", outline: "none" }} />
         <div style={{ padding: 14, display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button onClick={handleDownload} style={{ background: "var(--c-accent)", border: "none", padding: "8px 18px", fontFamily: mono, fontSize: 11, color: "var(--c-accent-lt)", cursor: "pointer", letterSpacing: "0.1em" }}>DOWNLOAD</button>
           <button onClick={() => navigator.clipboard.writeText(content)} style={{ background: "none", border: `1px solid var(--c-accent-mid)`, padding: "8px 16px", fontFamily: mono, fontSize: 11, color: "var(--c-accent)", cursor: "pointer", letterSpacing: "0.08em" }}>COPY</button>
@@ -361,7 +361,7 @@ function CareTeamPanel({ session, onClose, onLinksChanged }) {
             <div style={{ fontFamily: mono, fontSize: 10, color: "var(--c-text-subtle)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>Invite by email</div>
             {error && <div style={{ background: "var(--c-bg-error)", border: `1px solid var(--c-err-bdr)`, padding: "7px 10px", fontFamily: mono, fontSize: 11, color: "var(--c-err-text-dk)", marginBottom: 8 }}>{error}</div>}
             <div style={{ display: "flex", gap: 8 }}>
-              <input value={email} onChange={e => { setEmail(e.target.value); setError(null); }} onKeyDown={e => e.key === "Enter" && invite()} placeholder="caregiver@example.com" type="email"
+              <input aria-label="Caregiver email address" value={email} onChange={e => { setEmail(e.target.value); setError(null); }} onKeyDown={e => e.key === "Enter" && invite()} placeholder="caregiver@example.com" type="email"
                 style={{ flex: 1, background: "var(--c-bg-card)", border: `1px solid var(--c-border)`, padding: "8px 10px", fontFamily: serif, fontSize: 13, color: "var(--c-text)", outline: "none" }} />
               <button onClick={invite} disabled={!email.trim() || saving} style={{ background: email.trim() && !saving ? "var(--c-accent)" : "var(--c-border)", border: "none", padding: "8px 16px", fontFamily: mono, fontSize: 10, color: email.trim() && !saving ? "var(--c-accent-lt)" : "var(--c-text-subtle)", cursor: email.trim() && !saving ? "pointer" : "not-allowed", letterSpacing: "0.1em" }}>
                 {saving ? "…" : "INVITE"}
@@ -569,7 +569,7 @@ export default function FoodLog({ session, caregiverFor, pendingInvites, setting
         )}
 
         <div style={{ padding: "14px 0 10px", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search entries…"
+          <input aria-label="Search entries" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search entries…"
             style={{ background: "var(--c-bg-card)", border: `1px solid var(--c-border)`, padding: "6px 10px", fontFamily: serif, fontSize: 13, color: "var(--c-text)", outline: "none", flex: 1, minWidth: 160 }} />
           {allTags.map(t => <Tag key={t} label={t} active={filterTag === t} onClick={() => setFilterTag(p => p === t ? null : t)} />)}
           {filterTag && <button onClick={() => setFilterTag(null)} style={{ background: "none", border: "none", color: "var(--c-text-subtle)", fontFamily: mono, fontSize: 10, cursor: "pointer" }}>CLEAR FILTER</button>}

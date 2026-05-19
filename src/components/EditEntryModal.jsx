@@ -148,8 +148,9 @@ export default function EditEntryModal({ entry, onSave, onClose }) {
         <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 18 }}>
           {/* Meal */}
           <div>
-            <label style={lbl}>Meal / Occasion</label>
+            <label htmlFor="edit-meal" style={lbl}>Meal / Occasion</label>
             <select
+              id="edit-meal"
               value={meal}
               onChange={(e) => setMeal(e.target.value)}
               style={{ ...input, cursor: "pointer" }}
@@ -160,8 +161,9 @@ export default function EditEntryModal({ entry, onSave, onClose }) {
 
           {/* Foods */}
           <div>
-            <label style={lbl}>Foods &amp; Beverages</label>
+            <label htmlFor="edit-foods" style={lbl}>Foods &amp; Beverages</label>
             <textarea
+              id="edit-foods"
               value={foods}
               onChange={(e) => setFoods(e.target.value)}
               placeholder="Describe what you ate and drank…"
@@ -238,6 +240,7 @@ export default function EditEntryModal({ entry, onSave, onClose }) {
             </div>
             <div style={{ display: "flex", gap: 6 }}>
               <input
+                aria-label="Custom tag"
                 value={customTag}
                 onChange={(e) => setCustomTag(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addCustomTag()}
@@ -271,8 +274,9 @@ export default function EditEntryModal({ entry, onSave, onClose }) {
 
           {/* Notes */}
           <div>
-            <label style={lbl}>Additional Notes</label>
+            <label htmlFor="edit-notes" style={lbl}>Additional Notes</label>
             <textarea
+              id="edit-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Anything else you noticed — timing, how you felt, reactions…"
