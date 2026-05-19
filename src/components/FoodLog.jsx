@@ -324,7 +324,7 @@ function CareTeamPanel({ session, onClose, onLinksChanged }) {
     if (links.some(l => l.caregiver_email === addr)) { setError("Already invited."); return; }
     setSaving(true); setError(null);
     await supabase.from("caregiver_links").insert({ patient_id: session.user.id, patient_email: session.user.email, caregiver_email: addr, status: "pending" });
-    const { error: otpError } = await supabase.auth.signInWithOtp({ email: addr, options: { emailRedirectTo: window.location.origin, shouldCreateUser: true } });
+    const { error: otpError } = await supabase.auth.signInWithOtp({ email: addr, options: { emailRedirectTo: import.meta.env.VITE_APP_URL || window.location.origin, shouldCreateUser: true } });
     if (otpError) { setError(`Invite saved but email failed: ${otpError.message}`); setSaving(false); return; }
     setEmail(""); await loadLinks(); onLinksChanged(); setSaving(false);
   };
